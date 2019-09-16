@@ -19,11 +19,13 @@ statusFile.write("START")
 statusFile.close() 
 AutoPilotStatus = 1
 
+
 print "*********************************************************************"
 print "######################## Starting AutoPilot #########################"
 print "*********************************************************************"
 firstRun=-1
 lastRun=-1
+StartTime = datetime.now() 
 while AutoPilotStatus == 1:
 	
 
@@ -40,12 +42,22 @@ while AutoPilotStatus == 1:
 		print 'Waiting for the Low Voltage Supply to complete the action'
 		ReceiveAutopilotGreenSignal()
 
+		#################################################
+		#Check for Stop signal in AutoPilot.status file
+		#################################################
+		tmpStatusFile = open("AutoPilot.status","r") 
+		tmpString = (tmpStatusFile.read().split())[0]
+		if (tmpString == "STOP" or tmpString == "stop"):
+			print "Detected stop signal.\nStopping AutoPilot ...\n\n"
+			AutoPilotStatus = 0
+			continue
+
 		#Send aquisition command to the scope
 		ScopeAcquisition(RunNumber, NumEvents)
 		lastRun=RunNumber
 
-	StartTime = datetime.now()  
-	print "\nRun %i starting at %s" % (RunNumber,StartTime)
+ 
+	print "\nRun %i starting" % (RunNumber)
 
 	if not Debug: start_ots(RunNumber,False)
 
@@ -53,22 +65,15 @@ while AutoPilotStatus == 1:
 
 	if not Debug: stop_ots(False)
 
-	StopTime = datetime.now()
-	print "\nRun %i stopped at %s" % (RunNumber,StopTime)
+	print "\nRun %i stopped" % (RunNumber)
 	print "\n*********************************************************************"
 
-	#################################################
-	#Check for Stop signal in AutoPilot.status file
-	#################################################
-	tmpStatusFile = open("AutoPilot.status","r") 
-	tmpString = (tmpStatusFile.read().split())[0]
-	if (tmpString == "STOP" or tmpString == "stop"):
-		print "Detected stop signal.\nStopping AutoPilot ...\n\n"
-		AutoPilotStatus = 0
 
+
+StopTime = datetime.now()
 tmpStatusFile.close()
+
 
 print "\n*********************************************************************"
 print "######################## AutoPilot Stopped ##########################"
 print "*********************************************************************"
-print "for i in {%i..%i}; do python conversion_bin_fast.py --Run $i; done" % (firstRun,lastRun)

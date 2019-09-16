@@ -70,6 +70,12 @@ def WriteVoltageScanDataFile(ScanNumber, RunNumber, Voltage, MeasVoltage, MeasCu
     ScanDataFileHandle.write(str(RunNumber) + "\t" + str(Voltage) + "\t" + str(MeasVoltage) + "\t" + str(MeasCurrent) + "\t" + str(Temp20) + "\n")
     ScanDataFileHandle.close()
 
+#def ReadVoltageScanDataFile(ScanNumber):
+#    ScanDataFileHandle = open(VoltageScanDataFileName + 'scan' + str(ScanNumber) + '.txt' ,"a+")
+#    FirstEntry = ScanDataFileHandle.read().split('\n')[0].split('\t')
+#    MaxVoltage = FirstEntry[0] 
+#    ScanDataFileHandle.close()
+
 def ScopeStatusAutoPilot(runNumber):
     ScopeCommFile = open(ScopeCommFileName, "w")
     ScopeCommFile.write(str(runNumber))

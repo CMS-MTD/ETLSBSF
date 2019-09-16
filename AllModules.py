@@ -24,16 +24,17 @@ import getpass
 ip_address = "192.168.133.50"
 use_socket = 8000
 RunFilename = "/home/daq/otsdaq/srcs/otsdaq_cmstiming/Data_2018_09_September/ServiceData/RunNumber/OtherRuns0NextRunNumber.txt"
+RunFilenameManual = "/home/daq/otsdaq/srcs/otsdaq_cmstiming/Data_2018_09_September/ServiceData/RunNumber/ManualRunNumber.txt"
 
 ### Voltage Scan Parameters ###
 InitialVoltage = -140 
 #FinalVoltage = -600
-FinalVoltage = -240 
+FinalVoltage = -160 
 VoltageStep = 10 
 VoltageSettleTime = 10 #previously 10
 Compliance = 1e-06
 VoltageRampDownSettleTime = 1
-SBSFBaseDir = '/home/daq/BiasScan/SBSF/'
+SBSFBaseDir = '/home/daq/BiasScan/ETLSBSF/'
 ScanFilename = '%sNextScanNumber.txt' % SBSFBaseDir
 LowVoltageControlFileName = '%sLVControl.txt' % SBSFBaseDir
 VoltageScanDataFileName = '%sVoltageScanDataRegistry/' % SBSFBaseDir

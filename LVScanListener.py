@@ -2,8 +2,12 @@ from LVScanFunc import *
 from FileComm import *
 from AllModules import *
 
-Resource = InitiateResource()
+BoardName = raw_input("Board Name : ") 
+SensorName = raw_input("Sensor Name : ")
+ChillerTemp = raw_input("ChillerTemperature (C): ")
 
+Resource = InitiateResource()
+StartTime = datetime.now() 
 Voltage = InitialVoltage
 
 IncludeLowVoltageScan(True) #Tells Autopilot to include low voltage scan
@@ -13,12 +17,13 @@ if LowVoltageBoolean():
     print "\n*********************** Starting scan %d ****************************" % ScanNumber
 
 RampUp(Resource, InitialVoltage, False)
-
+StartRunNumber =-1
 while abs(Voltage) <= abs(FinalVoltage):
     print '\n*************************'
     print 'Waiting for the green signal from the autopilot\n'
     RunNumber = ReceiveLVGreenSignal()
-
+    if StartRunNumber ==-1:
+        StartRunNumber = RunNumber
     if RunNumber != 0:
 
         print 'Changing the Voltage to %f V' % Voltage
@@ -47,15 +52,18 @@ while abs(Voltage) <= abs(FinalVoltage):
         print '*************************\n'
         SendAutopilotGreenSignal()
 
-print "\n*********************** Scan %d complete ****************************" % ScanNumber
 
-time.sleep(7200)
+ReceiveLVGreenSignal()
 ##Ryan: always ramp down
 #DisableOutput = raw_input("Ramp down (y), disable Low Voltage Output (n)?")
 # if  DisableOutput == "y" or DisableOutput == "Y" :
 #     RampDown(Resource, Voltage - VoltageStep, VoltageRampDownSettleTime, False)
 # if  DisableOutput == "n" or DisableOutput == "N" :
 #     DisableLVOutput(Resource)
-RampDown(Resource, Voltage - VoltageStep, VoltageRampDownSettleTime, False)
 os.system("source %s" % StopAutopilotFileName)
+RampDown(Resource, Voltage - VoltageStep, VoltageRampDownSettleTime, False)
 SendAutopilotGreenSignal() ## ask autopilot to stop
+
+StopTime = datetime.now()
+print "\n*********************** Scan %d complete ****************************" % ScanNumber
+print '%d,%s,%s,%d,%d,%s,%s,%s,%f,%i,%i' %(ScanNumber, str(StartTime), str(StopTime), StartRunNumber, RunNumber, SensorName,BoardName, ChillerTemp, Temp20, FinalVoltage, VoltageStep)
