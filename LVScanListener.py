@@ -17,18 +17,24 @@ if LowVoltageBoolean():
     print "\n*********************** Starting scan %d ****************************" % ScanNumber
 
 RampUp(Resource, InitialVoltage, False)
-StartRunNumber =-1
+
+time.sleep(InitialCurrentSettleTime)
+
+StartRunNumber = -1
 while abs(Voltage) <= abs(FinalVoltage):
     print '\n*************************'
     print 'Waiting for the green signal from the autopilot\n'
-    RunNumber = ReceiveLVGreenSignal()
+    RunNumber = ReceiveLVGreenSignal(Resource, ScanNumber)
     if StartRunNumber ==-1:
         StartRunNumber = RunNumber
     if RunNumber != 0:
 
         print 'Changing the Voltage to %f V' % Voltage
-        MeasVoltage, MeasCurrent = SetVoltage(Resource, Voltage, VoltageSettleTime, False)
-        
+        MeasVoltage, MeasCurrent = SetVoltage(Resource, ScanNumber, Voltage, VoltageSettleTime, False)
+    
+        if Compliance - MeasCurrent < ComplianceRange :
+            HitComplianceTrue()
+
         EnvTimestamp = (datetime.now() - datetime.strptime("2000-01-01 00:00:00", "%Y-%m-%d %H:%M:%S")).total_seconds() - 3600 #For daylight savings time
         Temp20 = ConvertEnv(EnvTimestamp)
 
@@ -53,7 +59,7 @@ while abs(Voltage) <= abs(FinalVoltage):
         SendAutopilotGreenSignal()
 
 
-ReceiveLVGreenSignal()
+ReceiveLVGreenSignal(Resource, ScanNumber)
 ##Ryan: always ramp down
 #DisableOutput = raw_input("Ramp down (y), disable Low Voltage Output (n)?")
 # if  DisableOutput == "y" or DisableOutput == "Y" :

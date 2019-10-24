@@ -26,7 +26,7 @@ three = ROOT.TColor(2003,0.086,0.404,0.576)
 four =ROOT.TColor(2004,0.071,0.694,0.18)
 five =ROOT.TColor(2005,0.388,0.098,0.608)
 six=ROOT.TColor(2006,0.906,0.878,0.094)
-colors = [1,2001,2002,2003,2004,2005,2006,2,3,4,6,7,5,1,8,9,29,38,46,1,2001,2002,2003,2004,2005,2006]
+colors = [1,2001,2002,2003,2004,2005,2006,6,2,3,4,6,7,5,1,8,9,29,38,46,1,2001,2002,2003,2004,2005,2006]
 
 verbose = True
 def plot_single_scan(scan_num,graph,graph_MCP,graph_temp,graph_lgadbias,graph_current_lgadbias, graph_time_res,name,temp):
@@ -154,42 +154,74 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 		y_axis = "LGAD baseline noise RMS [mV] "
 		x_axis = "Bias Voltage [V]"
 		filename = "grlgadnoise_vs_bias"
+	if plottype==14: 
+		outputtag = "_charge_vs_bias"
+		y_axis = "MPV collected charge [fC]"
+		x_axis = "Bias Voltage [V]"
+		filename = "grcharge"
+	if plottype==15: 
+		outputtag = "_charge_vs_amp"
+		y_axis = "MPV collected charge [fC]"
+		x_axis = "MPV Ru106 response [mV]"
+		filename = "grcharge_vs_amp"
+	if plottype==16: 
+		outputtag = "_res_vs_charge"
+		y_axis = "Time resolution [ps]"
+		x_axis = "MPV collected charge [fC]"
+		filename = "grres_vs_charge"
 
 	c = ROOT.TCanvas()
 	c.SetGridy()
 	c.SetGridx()
 	mgraph = ROOT.TMultiGraph()
-
-	leg = ROOT.TLegend(0.2,0.7,0.59,0.89)
+	if plottype == 1 or plottype== 9 or plottype == 14:
+		leg = ROOT.TLegend(0.17,0.62,0.56,0.86)
+	else:
+		leg = ROOT.TLegend(0.5,0.62,0.85,0.86)
 	leg.SetMargin(0.15)
 
 	for i,scan in enumerate(scan_nums):
 		graph = outFile.Get(filename+str(scan))
-	 	cosmetic_tgraph(graph,i)
+	 	tb = scan==1
+	 	cosmetic_tgraph(graph,i,tb)
 		mgraph.Add(graph)
 	 	leg.AddEntry(graph, "%s, %i C" %(names[i],temps[i]),"EP")
 
 	mgraph.SetTitle("; %s; %s"%(x_axis,y_axis))
 	#if plottype==3: mgraph.SetTitle("; Bias voltage [V]; Current [100 nA]")
-	mgraph.Draw("AELP")
+	mgraph.Draw("AEP")
 	leg.Draw()
 	c.Print("plots/series%i%s.pdf"%(series_num,outputtag))
 
 
 
 
-def cosmetic_tgraph(graph,colorindex):
+def cosmetic_tgraph(graph,colorindex,tb=False):
 	graph.SetLineColor(colors[colorindex])
 	graph.SetMarkerColor(colors[colorindex])
 	graph.SetMarkerSize(0.75)
 	graph.SetMarkerStyle(20)
+	if tb:
+		graph.SetMarkerSize(2.5)
+		graph.SetMarkerStyle(29)
 	graph.SetTitle("; Bias voltage [V]; MPV Ru106 response [mV]")
 
 
 def get_time_res_channel(tree,ch,run=-1):
-	hist = ROOT.TH1D("h","",70,5.8e-9,6.8e-9)
-	tree.Project("h","LP2_15[%i]-LP2_20[3]"%ch,"amp[%i]>15 && amp[3]>15 && LP2_20[3]!=0 && LP2_20[%i]!=0"%(ch,ch))	
+	#(70,-3.3e-9,-1.6e-9)
+	mint = 5.8e-9
+	maxt =6.8e-9
+	if run>=2022 and run<= 2028:
+		mint = -3.3e-9
+		maxt = -1.6e-9
+	hist = ROOT.TH1D("h","",70,mint,maxt)
+	
+	photek_thresh = 15
+	photek_max = 200
+	if run>=2022 and run<= 2028: photek_thresh=50
+	tree.Project("h","LP2_15[%i]-LP2_20[3]"%ch,"amp[%i]>15 && amp[3]>%i && amp[3]<%i && LP2_20[3]!=0 && LP2_20[%i]!=0"%(ch,photek_thresh,photek_max,ch))	
 	f1 = ROOT.TF1("f1","gaus",5.8e-9,6.8e-9)
+
 	hist.Fit(f1)
 	if run>0:
 		c = ROOT.TCanvas()
@@ -212,8 +244,15 @@ def get_slew_rate_channel(tree,ch,run=-1):
 	return 1e-9 * hist.GetMean(),1e-9* hist.GetMeanError()
 
 def get_risetime_channel(tree,ch,run=-1):
-	hist = ROOT.TH1D("h","",60,0,1.2)
-	tree.Project("h","1e9*abs(amp[%i]/risetime[%i])"%(ch,ch),"amp[%i]>15"%(ch))	### mV/ s
+	hist = ROOT.TH1D("h","",60,0.1,1.2)
+	minAmp = 15.
+	if run==151172 or run==151173: minAmp = 40
+	if run>151244 and run <=151250: minAmp = 40
+	if run>=2023 and run <=2025: minAmp=40
+	if run>=2026 and run <=2028: minAmp=70
+	if run==2022: minAmp=30
+
+	tree.Project("h","1e9*abs(amp[%i]/risetime[%i])"%(ch,ch),"amp[%i]>%i"%(ch,minAmp))	### mV/ s
 
 	if run>0:
 		c = ROOT.TCanvas()
@@ -224,23 +263,57 @@ def get_risetime_channel(tree,ch,run=-1):
 
 
 def get_mean_response_channel(tree,ch,run=-1):
-	hist = ROOT.TH1D("h","",40,0,300)
+	hist = ROOT.TH1D("h","",50,0,400)
 	minAmp = 15.
 	if run==151172 or run==151173: minAmp = 40
+	if run>151244 and run <=151250: minAmp = 40
+	if run>=2023 and run <=2025: minAmp=40
+	if run>=2026 and run <=2028: minAmp=70
+	if run==2022: minAmp=30
+
+
 	tree.Project("h","amp[%i]"%ch,"amp[%i]>%f&&amp[3]>10"%(ch,minAmp))
 	
 	fitter = lg.LanGausFit()
 	#fitter.SetParLimits(1,25,1000)
-	f1 = fitter.fit(hist,None,None,100)
-	#f1 = fitter.fit(hist)
+	#f1 = fitter.fit(hist,None,None,100)
+	f1 = fitter.fit(hist)
 	# ROOT.TF1("f1","landau",0,150)
 	#hist.Fit(f1)
 	if run>0:
 		c = ROOT.TCanvas()
+		hist.SetTitle(";Amplitude [mV];Events")
 		hist.Draw()
 		f1.Draw("same")
 		c.Print("plots/runs/Run%i_amp.pdf"%run)
 	return f1.GetParameter(1),f1.GetParError(1)
+
+def get_charge_channel(tree,ch,run=-1):
+	hist = ROOT.TH1D("h","",40,2,80)
+	minAmp = 15.
+	if run==151172 or run==151173: minAmp = 40
+	if run>151244 and run <=151250: minAmp = 40
+	if run>=2023 and run <=2025: minAmp=40
+	if run>=2026 and run <=2028: minAmp=70
+	if run==2022: minAmp=30
+
+	tree.Project("h","-1000*integral[%i]*1e9*50/4700"%ch,"amp[%i]>%f&&amp[3]>10"%(ch,minAmp))
+	
+	fitter = lg.LanGausFit()
+	#fitter.SetParLimits(1,25,1000)
+	#f1 = fitter.fit(hist,None,None,20)
+	f1 = fitter.fit(hist)
+	# ROOT.TF1("f1","landau",0,150)
+	#hist.Fit(f1)
+	if run>0:
+		c = ROOT.TCanvas()
+		hist.SetTitle(";Integrated charge [fC];Events")
+		hist.Draw()
+		f1.Draw("same")
+		c.Print("plots/runs/Run%i_charge.pdf"%run)
+	return f1.GetParameter(1),f1.GetParError(1)
+
+
 
 def get_mean_baseline_RMS_channel(tree,ch):
 	hist = ROOT.TH1F("h","",20,-1000,1000)
@@ -284,6 +357,9 @@ def get_scan_results(scan_num,chan):
 	
 	mean_responses=[]
 	err_responses=[]
+
+	mean_charges=[]
+	err_charges=[]
 
 	time_res=[]
 	err_time_res=[]
@@ -333,6 +409,7 @@ def get_scan_results(scan_num,chan):
 			mean,err = get_mean_response(tree) ### find max amp channel
 		else: 
 			mean,err = get_mean_response_channel(tree,chan,run) ## use specified channel from series txt file
+			mean_charge,err_charge = get_charge_channel(tree,chan,run) ## use specified channel from series txt file
 			sigma,sigmaerr = get_time_res_channel(tree,chan,run)
 			slewrate,slewerr = get_slew_rate_channel(tree,chan,run)
 			risetime,riseerr = get_risetime_channel(tree,chan,run)
@@ -346,6 +423,9 @@ def get_scan_results(scan_num,chan):
 		errs_MCP.append(err_MCP)
 		mean_responses.append(mean)
 		err_responses.append(err)
+
+		mean_charges.append(mean_charge)
+		err_charges.append(err_charge)
 
 		time_res.append(sigma)
 		err_time_res.append(sigmaerr)
@@ -381,6 +461,7 @@ def get_scan_results(scan_num,chan):
 
 
 	graph = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",mean_responses),array("d",[0.1 for i in biases]),array("d",err_responses))
+	graph_charge = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",mean_charges),array("d",[0.1 for i in biases]),array("d",err_charges))
 	graph_MCP= ROOT.TGraphErrors(len(biases),array("d",biases),array("d",means_MCP),array("d",[0.1 for i in biases]),array("d",errs_MCP))
 	graph_lgadbias = ROOT.TGraphErrors(len(biases),array("d",lgad_biases),array("d",mean_responses),array("d",[0.1 for i in biases]),array("d",err_responses))
 	#graph_current_lgadbias = ROOT.TGraphErrors(len(biases),array("d",lgad_biases),array("d",currents_meas),array("d",[0.1 for i in biases]),array("d",[0.1 for i in biases]))
@@ -399,10 +480,13 @@ def get_scan_results(scan_num,chan):
 	graph_mpv_vs_snr = ROOT.TGraphErrors(len(biases),array("d",snr),array("d",mean_responses),array("d",snr_err),array("d",err_responses))
 	graph_risetime_vs_mpv = ROOT.TGraphErrors(len(biases),array("d",mean_responses),array("d",risetimes),array("d",err_responses),array("d",risetime_errs))
 
+	graph_charge_vs_amp = ROOT.TGraphErrors(len(biases),array("d",mean_responses),array("d",mean_charges),array("d",err_responses),array("d",err_charges))
+	graph_res_vs_charge = ROOT.TGraphErrors(len(biases),array("d",mean_charges),array("d",time_res),array("d",err_charges),array("d",err_time_res))
 
 
 	## give tgraphs names so they can be saved to preserve python scope for multi-scan overlay 
 	graph.SetName("gr%i"%scan_num)
+	graph_charge.SetName("grcharge%i"%scan_num)
 	graph_lgadbias.SetName("grlgad%i"%scan_num)
 	graph_current_lgadbias.SetName("griv%i"%scan_num)
 	graph_time_res.SetName("grres%i"%scan_num)
@@ -415,7 +499,8 @@ def get_scan_results(scan_num,chan):
 	graph_mpv_vs_snr.SetName("grmpv_vs_snr%i"%scan_num)
 	graph_risetime_vs_mpv.SetName("grrisetime_vs_mpv%i"%scan_num)
 
-	
+	graph_charge_vs_amp.SetName("grcharge_vs_amp%i"%scan_num)
+	graph_res_vs_charge.SetName("grres_vs_charge%i"%scan_num)
 
 
 	##convert rows to columns
@@ -433,7 +518,7 @@ def get_scan_results(scan_num,chan):
 	graph_lgadnoise_vs_bias = ROOT.TGraphErrors(len(biases),array("d",lgad_biases),array("d",col_mean_noise[chan]),array("d",[0.1 for i in biases]),array("d",col_err_noise[chan]))
 	graph_lgadnoise_vs_bias.SetName("grlgadnoise_vs_bias%i"%scan_num)
 	
-	return graph,graph_MCP,graph_temp,graph_lgadbias,graph_current_lgadbias,graphs_noise,graph_time_res,graph_snr,graph_res_vs_snr,graph_res_vs_mpv,graph_mpv_vs_snr,graph_slew_rate,graph_res_vs_slew,graph_risetime,graph_risetime_vs_mpv,graph_lgadnoise_vs_bias
+	return graph,graph_MCP,graph_temp,graph_lgadbias,graph_current_lgadbias,graphs_noise,graph_time_res,graph_snr,graph_res_vs_snr,graph_res_vs_mpv,graph_mpv_vs_snr,graph_slew_rate,graph_res_vs_slew,graph_risetime,graph_risetime_vs_mpv,graph_lgadnoise_vs_bias,graph_charge,graph_charge_vs_amp,graph_res_vs_charge
 	
 
 
@@ -453,7 +538,8 @@ with open(series_txt_filename) as series_txt_file:
 			scan_nums.append(int(line.split(",")[0]))		
 			names.append(line.split(",")[1])
 			temps.append(int(line.split(",")[2]))
-			chans.append(2) # LGAD channel.
+			if scan_nums[-1]!=1: chans.append(2) # LGAD channel.
+			else: chans.append(0)
 			# if "ch" in line.split(",")[3]: 
 			# 	human_channel_num = int(line.split(",")[3].split("ch")[1].split()[0])
 			# 	if human_channel_num <= 8: chans.append(human_channel_num-1)
@@ -462,9 +548,10 @@ with open(series_txt_filename) as series_txt_file:
 
 outFile = ROOT.TFile("buffer.root","RECREATE")
 for i,scan_num in enumerate(scan_nums):
-	graph,graph_MCP,graph_temp,graph_lgadbias,graph_current_lgadbias,graphs_noise,graph_time_res,graph_snr,graph_res_vs_snr,graph_res_vs_mpv,graph_mpv_vs_snr,graph_slew_rate,graph_res_vs_slew,graph_risetime,graph_risetime_vs_mpv, graph_lgadnoise_vs_bias = get_scan_results(scan_num,chans[i])
+	graph,graph_MCP,graph_temp,graph_lgadbias,graph_current_lgadbias,graphs_noise,graph_time_res,graph_snr,graph_res_vs_snr,graph_res_vs_mpv,graph_mpv_vs_snr,graph_slew_rate,graph_res_vs_slew,graph_risetime,graph_risetime_vs_mpv, graph_lgadnoise_vs_bias,graph_charge,graph_charge_vs_amp,graph_res_vs_charge = get_scan_results(scan_num,chans[i])
 	graph_lgadbias.Write()
 	graph.Write()
+	graph_charge.Write()
 	graph_current_lgadbias.Write()
 	graph_time_res.Write()
 	graph_snr.Write()
@@ -476,6 +563,8 @@ for i,scan_num in enumerate(scan_nums):
 	graph_risetime.Write()
 	graph_risetime_vs_mpv.Write()
 	graph_lgadnoise_vs_bias.Write()
+	graph_charge_vs_amp.Write()
+	graph_res_vs_charge.Write()
 
 	for graph_noise in graphs_noise: graph_noise.Write()
 	plot_single_scan(scan_num,graph,graph_MCP,graph_temp,graph_lgadbias,graph_current_lgadbias,graph_time_res,names[i],temps[i])
@@ -483,7 +572,7 @@ for i,scan_num in enumerate(scan_nums):
 
 outFile.Save()
 
-for i in range(13):
+for i in range(16):
 	plot_overlay(outFile,names,temps,series_num,i+1)
 
 
