@@ -22,10 +22,10 @@ def ReceiveLVGreenSignal(Resource, ScanNumber):
         MeasVoltage, MeasCurrent = Meas(Resource)
         CurrentTime = datetime.now()
         EnvTimestamp = (CurrentTime - datetime.strptime("2000-01-01 00:00:00", "%Y-%m-%d %H:%M:%S")).total_seconds() - 3600 #For daylight savings time
-        Temp20 = ConvertEnv(EnvTimestamp)
+        Temp16,Temp20,Temp17,Temp18,Temp19 = ConvertEnv(EnvTimestamp)
 
         if i % MeasTimeInterval == 0:
-            WriteEnvScanDataFile(ScanNumber, CurrentTime, MeasVoltage, MeasCurrent, Temp20)
+            WriteEnvScanDataFile(ScanNumber, CurrentTime, MeasVoltage, MeasCurrent, Temp16,Temp20,Temp17,Temp18,Temp19)
         i = i + 1
 
         LowVoltageControlFileHandle = open(LowVoltageControlFileName, "r")
@@ -78,14 +78,14 @@ def LowVoltageBoolean():
     IncludeLowVoltageHandle.close()
     return LVBool
 
-def WriteVoltageScanDataFile(ScanNumber, RunNumber, Voltage, MeasVoltage, MeasCurrent, Temp20):
+def WriteVoltageScanDataFile(ScanNumber, RunNumber, Voltage, MeasVoltage, MeasCurrent, Temp16,Temp20,Temp17,Temp18,Temp19):
     ScanDataFileHandle = open(VoltageScanDataFileName + 'scan' + str(ScanNumber) + '.txt' ,"a+")
-    ScanDataFileHandle.write(str(RunNumber) + "\t" + str(Voltage) + "\t" + str(MeasVoltage) + "\t" + str(MeasCurrent) + "\t" + str(Temp20) + "\n")
+    ScanDataFileHandle.write(str(RunNumber) + "\t" + str(Voltage) + "\t" + str(MeasVoltage) + "\t" + str(MeasCurrent) + "\t" + str(Temp16) + "\t" + str(Temp20) + "\t" + str(Temp17) + "\t" + str(Temp18) + "\t" + str(Temp19) + "\n")
     ScanDataFileHandle.close()
 
-def WriteEnvScanDataFile(ScanNumber, CurrentTime, MeasVoltage, MeasCurrent, Temp20):
+def WriteEnvScanDataFile(ScanNumber, CurrentTime, MeasVoltage, MeasCurrent, Temp16,Temp20,Temp17,Temp18,Temp19):
     ScanDataFileHandle = open(VoltageScanDataFileName + 'EnvScan' + str(ScanNumber) + '.txt' ,"a+")
-    ScanDataFileHandle.write(str(CurrentTime) + "\t" + str(MeasVoltage) + "\t" + str(MeasCurrent) + "\t" + str(Temp20) + "\n")
+    ScanDataFileHandle.write(str(CurrentTime) + "\t" + str(MeasVoltage) + "\t" + str(MeasCurrent) + "\t" + str(Temp16) + "\t" + str(Temp20) + "\t" + str(Temp17) + "\t" + str(Temp18) + "\t" + str(Temp19) + "\n")
     ScanDataFileHandle.close()
 
 #def ReadVoltageScanDataFile(ScanNumber):

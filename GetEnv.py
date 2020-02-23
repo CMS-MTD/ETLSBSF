@@ -52,10 +52,10 @@ def GetEnvMeas(timestamp):
 					#Resis13 = all_labview_array[1]
 					#Resis14 = all_labview_array[2]
 					#Resis15 = all_labview_array[3]
-					#Resis16 = all_labview_array[4]
-					#Resis17 = all_labview_array[5]
-					#Resis18 = all_labview_array[6]
-					#Resis19 = all_labview_array[7]
+					Resis16 = all_labview_array[19]
+					Resis17 = all_labview_array[21]
+					Resis18 = all_labview_array[22]
+					Resis19 = all_labview_array[23]
 					Resis20 = all_labview_array[20] #23
 					#Voltage1 = all_labview_array[9]
 					#Current1 = all_labview_array[10]
@@ -73,10 +73,10 @@ def GetEnvMeas(timestamp):
 					#Resis13 = all_labview_array[index_labview_time,1]
 					#Resis14 = all_labview_array[index_labview_time,2]
 					#Resis15 = all_labview_array[index_labview_time, 3]
-					#Resis16 = all_labview_array[index_labview_time, 4]
-					#Resis17 = all_labview_array[index_labview_time, 5]
-					#Resis18 = all_labview_array[index_labview_time, 6]
-					#Resis19 = all_labview_array[index_labview_time, 7]
+					Resis16 = all_labview_array[index_labview_time, 19]
+					Resis17 = all_labview_array[index_labview_time, 21]
+					Resis18 = all_labview_array[index_labview_time, 22]
+					Resis19 = all_labview_array[index_labview_time, 23]
 					Resis20 = all_labview_array[index_labview_time, 20] #23
 					# Voltage1 = all_labview_array[index_labview_time, 9]
 					# Current1 = all_labview_array[index_labview_time, 10]
@@ -89,10 +89,10 @@ def GetEnvMeas(timestamp):
 				# Resis13 = -1
 				# Resis14 = -1
 				# Resis15 = -1
-				# Resis16 = -1
-				# Resis17 = -1
-				# Resis18 = -1
-				# Resis19 = -1
+				Resis16 = -1
+				Resis17 = -1
+				Resis18 = -1
+				Resis19 = -1
 				Resis20 = -1
 				# Voltage1 = -1
 				# Current1 = -1
@@ -105,10 +105,10 @@ def GetEnvMeas(timestamp):
 				# Resis13 = -1
 				# Resis14 = -1
 				# Resis15 = -1
-				# Resis16 = -1
-				# Resis17 = -1
-				# Resis18 = -1
-				# Resis19 = -1
+				Resis16 = -1
+				Resis17 = -1
+				Resis18 = -1
+				Resis19 = -1
 				Resis20 = -1
 				# Voltage1 = -1
 				# Current1 = -1
@@ -118,7 +118,11 @@ def GetEnvMeas(timestamp):
 				# Current3 = -1
 	else:
 		Resis20 = -1
-	return Resis20
+		Resis16 = -1
+		Resis17 = -1
+		Resis18 = -1
+		Resis19 = -1
+	return Resis16,Resis20,Resis17,Resis18,Resis19
 
 def Resistance_calc(T): #Function to calculate resistance for any temperature                                                                                                                                                                 
 	R0 = 100 #Resistance in ohms at 0 degree celsius                                                                                                                                                                                          
@@ -153,11 +157,17 @@ def Temp_calc(R): #Function to calculate temperature for any resistance
 	return Temperature_R
 
 def ConvertEnv(timestamp):
-	Resis20 = GetEnvMeas(timestamp)
+	Resis16,Resis20,Resis17,Resis18,Resis19 = GetEnvMeas(timestamp)
 	if Resis20 != -1 and Resis20 != 0:
 		#Temp20 = round(Temp_calc(Resis20),2)
 		Temp20 = round(Temp_calc_NTC(Resis20),2)
+		Temp19 = round(Temp_calc_NTC(Resis19),2)
+		Temp18 = round(Temp_calc_NTC(Resis18),2)
+		Temp17 = round(Temp_calc_NTC(Resis17),2)
 	else: 
 		Temp20 = -999
-	return Temp20
+		Temp19 = -999
+		Temp18 = -999
+		Temp17 = -999
+	return Resis16,Temp20,Temp17,Temp18,Temp19
 

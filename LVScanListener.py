@@ -36,10 +36,10 @@ while abs(Voltage) <= abs(FinalVoltage):
             HitComplianceTrue()
 
         EnvTimestamp = (datetime.now() - datetime.strptime("2000-01-01 00:00:00", "%Y-%m-%d %H:%M:%S")).total_seconds() - 3600 #For daylight savings time
-        Temp20 = ConvertEnv(EnvTimestamp)
+        Temp16,Temp20,Temp17,Temp18,Temp19 = ConvertEnv(EnvTimestamp)
 
         ##### Write scan data for this run
-        WriteVoltageScanDataFile(ScanNumber, RunNumber, Voltage, MeasVoltage, MeasCurrent, Temp20)
+        WriteVoltageScanDataFile(ScanNumber, RunNumber, Voltage, MeasVoltage, MeasCurrent, Temp16,Temp20,Temp17,Temp18,Temp19)
         
         if InitialVoltage != FinalVoltage:
             Voltage = Voltage + VoltageStep

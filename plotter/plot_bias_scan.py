@@ -16,9 +16,9 @@ ROOT.gStyle.SetTitleSize(0.06,"t")
 ROOT.gStyle.SetPadBottomMargin(0.14)
 ROOT.gStyle.SetPadLeftMargin(0.14)
 ROOT.gStyle.SetTitleOffset(1,'y')
-#ROOT.gStyle.SetLegendTextSize(0.05)
+ROOT.gStyle.SetLegendTextSize(0.035)
 ROOT.gStyle.SetGridStyle(3)
-ROOT.gStyle.SetGridColor(13)
+ROOT.gStyle.SetGridColor(14)
 ROOT.gStyle.SetOptFit(1)
 one = ROOT.TColor(2001,0.906,0.153,0.094)
 two = ROOT.TColor(2002,0.906,0.533,0.094)
@@ -29,6 +29,32 @@ six=ROOT.TColor(2006,0.906,0.878,0.094)
 colors = [1,2001,2002,2003,2004,2005,2006,6,2,3,4,6,7,5,1,8,9,29,38,46,1,2001,2002,2003,2004,2005,2006]
 
 verbose = True
+charge_thresh = 20 #fC
+photek_res = 15 #ps
+
+def get_min_amp(run):
+	minAmp =15
+	if run==151172 or run==151173: minAmp = 40
+	if run>151244 and run <=151250: minAmp = 40
+	if run>=2023 and run <=2025: minAmp=40
+	if run>=2026 and run <=2028: minAmp=70
+	if run==2022: minAmp=30
+	if run >= 151357 and run<=151374: minAmp=10
+	if run==151647 or run==151739: minAmp=30
+	if run>=151639 and run<=151653: minAmp=45
+	if run>=151818 and run<=151822: minAmp=45
+	if run>=151866 and run<=151870: minAmp=45
+	if run>=151848 and run<=151854: minAmp=45
+	if run>=151835 and run<=151838: minAmp=45
+	if run>=151649 and run<=151653: minAmp=45
+	if run>=151168 and run<=151169: minAmp=45
+	if run>=151896 and run<=151902: minAmp=45
+	if run>=151994 and run<=151997: minAmp=45
+	elif run>=152104 and run<=152108: minAmp=50
+
+
+	return minAmp
+
 def plot_single_scan(scan_num,graph,graph_MCP,graph_temp,graph_lgadbias,graph_current_lgadbias, graph_time_res,name,temp):
 	cosmetic_tgraph(graph,3)
 	cosmetic_tgraph(graph_MCP,6)
@@ -67,6 +93,7 @@ def plot_single_scan(scan_num,graph,graph_MCP,graph_temp,graph_lgadbias,graph_cu
 	leg.Draw()
 	c.Print("plots/scan%i.pdf"%scan_num)
 
+
 def plot_noise(graphs_noise):
 	c = ROOT.TCanvas()
 	c.SetGridy()
@@ -91,12 +118,12 @@ def plot_noise(graphs_noise):
 def plot_overlay(outfile,names,temps,series_num,plottype):
 	if plottype==1: 
 		outputtag = ""
-		y_axis = "MPV Ru106 response [mV]"
+		y_axis = "MPV amplitude [mV]"
 		x_axis = "Bias voltage [V]"
 		filename = "gr"
 	if plottype==2: 
 		outputtag = "_corr"
-		y_axis = "MPV Ru106 response [mV]"
+		y_axis = "MPV amplitude [mV]"
 		x_axis = "LGAD Bias voltage [V]"
 		filename = "grlgad"
 	if plottype==3: 
@@ -136,28 +163,28 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 		filename = "grslew"
 	if plottype==10: 
 		outputtag = "_res_vs_slew"
-		y_axis = "Time resolution [ps]"
+		y_axis = "Time resolution, LGAD only [ps]"
 		x_axis = "Mean slew rate [mV/ns]"
 		filename = "grres_vs_slew"
 	if plottype==11: 
 		outputtag = "_risetime"
-		y_axis = "Risetime [ns]"
+		y_axis = "Risetime [ps] (10 to 90%)"
 		x_axis = "Bias voltage [V]"
 		filename = "grrise"
 	if plottype==12: 
 		outputtag = "_risetime_vs_mpv"
-		y_axis = "Risetime [ns]"
+		y_axis = "Risetime [ps] (10 to 90%)"
 		x_axis = "MPV Ru106 response [mV]"
 		filename = "grrisetime_vs_mpv"
 	if plottype==13: 
 		outputtag = "_lgadnoise_vs_bias"
-		y_axis = "LGAD baseline noise RMS [mV] "
-		x_axis = "Bias Voltage [V]"
+		y_axis = "LGAD baseline noise RMS [mV]"
+		x_axis = "Bias voltage [V]"
 		filename = "grlgadnoise_vs_bias"
 	if plottype==14: 
 		outputtag = "_charge_vs_bias"
 		y_axis = "MPV collected charge [fC]"
-		x_axis = "Bias Voltage [V]"
+		x_axis = "Bias voltage [V]"
 		filename = "grcharge"
 	if plottype==15: 
 		outputtag = "_charge_vs_amp"
@@ -166,32 +193,91 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 		filename = "grcharge_vs_amp"
 	if plottype==16: 
 		outputtag = "_res_vs_charge"
-		y_axis = "Time resolution [ps]"
+		y_axis = "Time resolution, LGAD + MCP [ps]"
 		x_axis = "MPV collected charge [fC]"
 		filename = "grres_vs_charge"
+	if plottype==17: 
+		outputtag = "_res_corr_vs_charge"
+		y_axis = "Time resolution, LGAD only [ps]"
+		x_axis = "MPV collected charge [fC]"
+		filename = "grres_corr_vs_charge"
+	if plottype==18: 
+		outputtag = "_risetime_vs_charge"
+		y_axis = "Risetime [ps] (10 to 90%)"
+		x_axis = "MPV collected charge [fC]"
+		filename = "grrisetime_vs_charge"
+	if plottype==19: 
+		outputtag = "_slew_vs_charge"
+		y_axis = "Mean slew rate [mV/ns]"
+		x_axis = "MPV collected charge [fC]"
+		filename = "grslew_vs_charge"
+	if plottype==20: 
+		outputtag = "_jitter"
+		y_axis = "Expected jitter [ps]"
+		x_axis = "Bias voltage [V]"
+		filename = "grjitter"
 
 	c = ROOT.TCanvas()
 	c.SetGridy()
 	c.SetGridx()
+
+	showtemp =True
+	showCMS =True
+	if series_num=="CMS" or series_num=="ATLAS" or series_num=="CMSATLAS": 
+		showtemp=False
+		showCMS = False
+	if series_num=="Sergey" or series_num=="2":
+		showtemp=False
 	mgraph = ROOT.TMultiGraph()
-	if plottype == 1 or plottype== 9 or plottype == 14:
-		leg = ROOT.TLegend(0.17,0.62,0.56,0.86)
+	if( plottype == 1 or plottype== 9 or plottype == 14 or plottype==19) and series_num!="7":
+		if showtemp: leg = ROOT.TLegend(0.17,0.52,0.56,0.86)
+		else:
+			if series_num=="2": leg = ROOT.TLegend(0.2,0.58,0.43,0.86)
+			else: leg = ROOT.TLegend(0.15,0.62,0.57,0.86)
+        elif plottype==19 and series_num=="7":
+                leg = ROOT.TLegend(0.5,0.16,0.85,0.40)
 	else:
-		leg = ROOT.TLegend(0.5,0.62,0.85,0.86)
+		if showtemp:
+			leg = ROOT.TLegend(0.5,0.52,0.85,0.86)
+		else:
+			leg = ROOT.TLegend(0.46,0.62,0.87,0.86)
 	leg.SetMargin(0.15)
 
+
+	if not showtemp: 
+		if series_num=="CMS" or series_num=="CMSATLAS": leg.SetNColumns(3)
+		if series_num=="ATLAS": leg.SetNColumns(2)
+
 	for i,scan in enumerate(scan_nums):
-		graph = outFile.Get(filename+str(scan))
+		print filename+str(scan)+"_"+str(chans[i])
+		#if plottype!=13:
+		graph = outFile.Get(filename+str(scan)+"_"+str(chans[i]))
+		#else: graph = outFile.Get(filename+str(scan))
 	 	tb = scan==1
-	 	cosmetic_tgraph(graph,i,tb)
+	 	
+	 	if "temp" in series_num or "Feb" in series_num or "W2" in series_num or "Sergey" in series_num or series_num=="2": cosmetic_tgraph(graph,i,tb)
+	 	else: cosmetic_tgraph_organized(graph,names[i],tb)
 		mgraph.Add(graph)
-	 	leg.AddEntry(graph, "%s, %i C" %(names[i],temps[i]),"EP")
+		if series_num=="CMSATLAS" and "ATLAS" in names[i]: continue
+		if showtemp:
+		 	leg.AddEntry(graph, "%s, %i C" %(names[i],temps[i]),"EP")
+		elif showCMS:
+			leg.AddEntry(graph, "%s" %(names[i]),"EP")
+		else: 
+			leg.AddEntry(graph, "%s" %(names[i].replace("CMS ","").replace("ATLAS ","").replace("MW","metal")),"EP")
+
 
 	mgraph.SetTitle("; %s; %s"%(x_axis,y_axis))
+	mgraph.Draw("AP")
+	if y_axis == "Risetime [ps] (10 to 90%)":
+		mgraph.GetYaxis().SetRangeUser(350,1000)
+	if plottype==16 or plottype==17: 
+		mgraph.GetYaxis().SetRangeUser(20,65)
 	#if plottype==3: mgraph.SetTitle("; Bias voltage [V]; Current [100 nA]")
-	mgraph.Draw("AEP")
+	if x_axis == "Bias voltage [V]": mgraph.Draw("AELP")
+	else: mgraph.Draw("AEP")
 	leg.Draw()
-	c.Print("plots/series%i%s.pdf"%(series_num,outputtag))
+	c.Print("plots/series%s%s.pdf"%(series_num,outputtag))
 
 
 
@@ -206,14 +292,55 @@ def cosmetic_tgraph(graph,colorindex,tb=False):
 		graph.SetMarkerStyle(29)
 	graph.SetTitle("; Bias voltage [V]; MPV Ru106 response [mV]")
 
+def cosmetic_tgraph_organized(graph,sensorname,tb=False):
+	markerstyle=20
+	colorindex=0
+	linestyle = 1
+	if "CMS" in sensorname:
+		#filled markers
+		#color based on P.
+		colorindex =int(sensorname.split("P")[1].split()[0])
+		if "MW" in sensorname:
+			markerstyle=21
+		elif "50x500" in sensorname or "50 #mum" in sensorname:
+			markerstyle=23
+	elif "ATLAS" in sensorname:
+		linestyle=7
+		if "90 #mum metal" in sensorname: colorindex=0
+		elif "90 #mum" in sensorname: colorindex=1
+		elif "50 #mum" in sensorname: colorindex=5
+		elif "30 #mum" in sensorname: colorindex=4
+
+		markerstyle=23 + int(sensorname[-1])
+
+
+	graph.SetLineColor(colors[colorindex])
+	graph.SetMarkerColor(colors[colorindex])
+	graph.SetMarkerSize(0.75)
+	graph.SetMarkerStyle(markerstyle)
+	graph.SetLineStyle(linestyle)
+	if tb:
+		graph.SetMarkerSize(2.5)
+		graph.SetMarkerStyle(29)
+	graph.SetTitle("; Bias voltage [V]; MPV Ru106 response [mV]")
+
 
 def get_time_res_channel(tree,ch,run=-1):
 	#(70,-3.3e-9,-1.6e-9)
 	mint = 5.8e-9
 	maxt =6.8e-9
+
 	if run>=2022 and run<= 2028:
 		mint = -3.3e-9
 		maxt = -1.6e-9
+	if run>=151982 and run<=151997:
+		mint = 6.2e-9
+		maxt = 7.2e-9
+
+	if run>=152104 and run<=152108: 
+		mint = 4.7e-9
+		maxt = 5.7e-9
+
 	hist = ROOT.TH1D("h","",70,mint,maxt)
 	
 	photek_thresh = 15
@@ -227,50 +354,47 @@ def get_time_res_channel(tree,ch,run=-1):
 		c = ROOT.TCanvas()
 		hist.Draw()
 		f1.Draw("same")
-		c.Print("plots/runs/Run%i_time.pdf"%run)
+		if ch==2: c.Print("plots/runs/Run%i_time.pdf"%run)
+		else: c.Print("plots/runs/Run%i_ch%i_time.pdf"%(run,ch))
 	print 'Run NUmber %d,  %f, %f ' %(run,1e12*f1.GetParameter(2),1e12*f1.GetParError(2))
 	return 1e12*f1.GetParameter(2),1e12*f1.GetParError(2)
 
 
 def get_slew_rate_channel(tree,ch,run=-1):
 	hist = ROOT.TH1D("h","",60,0,600e9)
-	tree.Project("h","abs(risetime[%i])"%ch,"amp[%i]>15"%(ch))	### mV/ s
+	minAmp = get_min_amp(run)
+	tree.Project("h","abs(risetime[%i])"%ch,"amp[%i]>%i"%(ch,minAmp))	### mV/ s
 
 	if run>0:
 		c = ROOT.TCanvas()
 		hist.Draw()
-		c.Print("plots/runs/Run%i_slewrate.pdf"%run)
+		if ch==2: c.Print("plots/runs/Run%i_slewrate.pdf"%run)
+		else: c.Print("plots/runs/Run%i_ch%i_slewrate.pdf"%(run,ch))
 	#print 'Run NUmber %d,  %f, %f ' %(run,1e12*f1.GetParameter(2),1e12*f1.GetParError(2))
 	return 1e-9 * hist.GetMean(),1e-9* hist.GetMeanError()
 
 def get_risetime_channel(tree,ch,run=-1):
-	hist = ROOT.TH1D("h","",60,0.1,1.2)
+	hist = ROOT.TH1D("h","",60,100,1200)
 	minAmp = 15.
-	if run==151172 or run==151173: minAmp = 40
-	if run>151244 and run <=151250: minAmp = 40
-	if run>=2023 and run <=2025: minAmp=40
-	if run>=2026 and run <=2028: minAmp=70
-	if run==2022: minAmp=30
 
-	tree.Project("h","1e9*abs(amp[%i]/risetime[%i])"%(ch,ch),"amp[%i]>%i"%(ch,minAmp))	### mV/ s
+
+	#10 to 90 risetime
+	tree.Project("h","1e12*abs(0.8*amp[%i]/risetime[%i])"%(ch,ch),"amp[%i]>%i"%(ch,minAmp))	### mV/ s
 
 	if run>0:
 		c = ROOT.TCanvas()
 		hist.Draw()
-		c.Print("plots/runs/Run%i_risetime.pdf"%run)
+		if ch==2: c.Print("plots/runs/Run%i_risetime.pdf"%run)
+		else: c.Print("plots/runs/Run%i_ch%i_risetime.pdf"%(run,ch))
 	#print 'Run NUmber %d,  %f, %f ' %(run,1e12*f1.GetParameter(2),1e12*f1.GetParError(2))
 	return hist.GetMean(),hist.GetMeanError()
 
 
 def get_mean_response_channel(tree,ch,run=-1):
 	hist = ROOT.TH1D("h","",50,0,400)
-	minAmp = 15.
-	if run==151172 or run==151173: minAmp = 40
-	if run>151244 and run <=151250: minAmp = 40
-	if run>=2023 and run <=2025: minAmp=40
-	if run>=2026 and run <=2028: minAmp=70
-	if run==2022: minAmp=30
+	if run>=152104 and run<=152108: hist = ROOT.TH1D("h","",50,2,710)
 
+	minAmp = get_min_amp(run)
 
 	tree.Project("h","amp[%i]"%ch,"amp[%i]>%f&&amp[3]>10"%(ch,minAmp))
 	
@@ -285,17 +409,21 @@ def get_mean_response_channel(tree,ch,run=-1):
 		hist.SetTitle(";Amplitude [mV];Events")
 		hist.Draw()
 		f1.Draw("same")
-		c.Print("plots/runs/Run%i_amp.pdf"%run)
+		if ch==2: c.Print("plots/runs/Run%i_amp.pdf"%run)
+		else: c.Print("plots/runs/Run%i_ch%i_amp.pdf"%(run,ch))
+		#c.Print("plots/runs/Run%i_amp.root"%run)
 	return f1.GetParameter(1),f1.GetParError(1)
 
 def get_charge_channel(tree,ch,run=-1):
-	hist = ROOT.TH1D("h","",40,2,80)
-	minAmp = 15.
-	if run==151172 or run==151173: minAmp = 40
-	if run>151244 and run <=151250: minAmp = 40
-	if run>=2023 and run <=2025: minAmp=40
-	if run>=2026 and run <=2028: minAmp=70
-	if run==2022: minAmp=30
+	minAmp = get_min_amp(run)
+	if run >= 151357 and run<=151374: 
+		hist = ROOT.TH1D("h","",40,1,30)
+		minAmp=10.
+	elif run>=151982 and run<=151997 and ch==1: hist = ROOT.TH1D("h","",100,2,500)
+	elif run>=152104 and run<=152108: hist = ROOT.TH1D("h","",100,2,900)
+	else: hist = ROOT.TH1D("h","",50,2,100)
+
+
 
 	tree.Project("h","-1000*integral[%i]*1e9*50/4700"%ch,"amp[%i]>%f&&amp[3]>10"%(ch,minAmp))
 	
@@ -310,7 +438,9 @@ def get_charge_channel(tree,ch,run=-1):
 		hist.SetTitle(";Integrated charge [fC];Events")
 		hist.Draw()
 		f1.Draw("same")
-		c.Print("plots/runs/Run%i_charge.pdf"%run)
+		if ch==2: c.Print("plots/runs/Run%i_charge.pdf"%run)
+		else: c.Print("plots/runs/Run%i_ch%i_charge.pdf"%(run,ch))
+		#c.Print("plots/runs/Run%i_charge.root"%run)
 	return f1.GetParameter(1),f1.GetParError(1)
 
 
@@ -364,6 +494,8 @@ def get_scan_results(scan_num,chan):
 	time_res=[]
 	err_time_res=[]
 
+	time_res_corr=[]
+
 	means_MCP=[]
 	errs_MCP=[]
 
@@ -378,6 +510,9 @@ def get_scan_results(scan_num,chan):
 
 	risetimes=[]
 	risetime_errs=[]
+
+	jitters=[]
+	jitter_errs=[]
 
 	scan_txt_filename = "/home/daq/BiasScan/ETLSBSF/VoltageScanDataRegistry/scan%i.txt" % scan_num
 	with open(scan_txt_filename) as scan_txt_file:
@@ -428,6 +563,11 @@ def get_scan_results(scan_num,chan):
 		err_charges.append(err_charge)
 
 		time_res.append(sigma)
+		if (pow(sigma,2)-pow(photek_res,2)) > 0: 
+			time_res_corr.append(pow(pow(sigma,2)-pow(photek_res,2),0.5))
+		
+		else: time_res_corr.append(0)
+
 		err_time_res.append(sigmaerr)
 
 		mean_noise.append(noise_means)
@@ -435,6 +575,12 @@ def get_scan_results(scan_num,chan):
 
 		snr_lgad_channel = mean/noise_means[chan]
 		snr_err_lgad_channel = err/noise_means[chan]
+
+		jitter = 1000.*noise_means[chan]/slewrate
+		jitter_err = pow(pow(noise_errs[chan]/noise_means[chan],2)+ pow(slewerr/slewrate,2),0.5)* jitter 
+
+		jitters.append(jitter)
+		jitter_errs.append(jitter_err)
 
 		snr.append(snr_lgad_channel)
 		snr_err.append(snr_err_lgad_channel)
@@ -462,46 +608,57 @@ def get_scan_results(scan_num,chan):
 
 	graph = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",mean_responses),array("d",[0.1 for i in biases]),array("d",err_responses))
 	graph_charge = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",mean_charges),array("d",[0.1 for i in biases]),array("d",err_charges))
+	graph_charge_transpose = ROOT.TGraphErrors(len(biases),array("d",mean_charges),array("d",biases),array("d",err_charges),array("d",[0.1 for i in biases]))
 	graph_MCP= ROOT.TGraphErrors(len(biases),array("d",biases),array("d",means_MCP),array("d",[0.1 for i in biases]),array("d",errs_MCP))
 	graph_lgadbias = ROOT.TGraphErrors(len(biases),array("d",lgad_biases),array("d",mean_responses),array("d",[0.1 for i in biases]),array("d",err_responses))
 	#graph_current_lgadbias = ROOT.TGraphErrors(len(biases),array("d",lgad_biases),array("d",currents_meas),array("d",[0.1 for i in biases]),array("d",[0.1 for i in biases]))
 	graph_current_lgadbias = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",currents_meas),array("d",[0.1 for i in biases]),array("d",[0.1 for i in biases]))
 	graph_temp = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",temps),array("d",[0.1 for i in biases]),array("d",[0.1 for i in biases]))
-	
+	#graph_temp_bias = ROOT.TGraphErrors(len(biases),array("d",temps),array("d",biases),array("d",[0.1 for i in biases]),array("d",[0.1 for i in biases]))
+	graph_temp_bias = ROOT.TGraphErrors(len(biases),array("d",mean_charges),array("d",temps),array("d",err_charges),array("d",[0.1 for i in biases]))
 
 	graph_time_res = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",time_res),array("d",[0.1 for i in biases]),array("d",err_time_res))
 	graph_slew_rate = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",slewrates),array("d",[0.1 for i in biases]),array("d",slewrate_errs))
 	graph_risetime = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",risetimes),array("d",[0.1 for i in biases]),array("d",risetime_errs))
 	
 	graph_snr = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",snr),array("d",[0.1 for i in biases]),array("d",snr_err))
+	graph_jitter = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",jitters),array("d",[0.1 for i in biases]),array("d",jitter_errs))
 	graph_res_vs_snr = ROOT.TGraphErrors(len(biases),array("d",snr),array("d",time_res),array("d",snr_err),array("d",err_time_res))
-	graph_res_vs_slew = ROOT.TGraphErrors(len(biases),array("d",slewrates),array("d",time_res),array("d",slewrate_errs),array("d",err_time_res))
+	graph_res_vs_slew = ROOT.TGraphErrors(len(biases),array("d",slewrates),array("d",time_res_corr),array("d",slewrate_errs),array("d",err_time_res))
 	graph_res_vs_mpv = ROOT.TGraphErrors(len(biases),array("d",mean_responses),array("d",time_res),array("d",err_responses),array("d",err_time_res))
 	graph_mpv_vs_snr = ROOT.TGraphErrors(len(biases),array("d",snr),array("d",mean_responses),array("d",snr_err),array("d",err_responses))
 	graph_risetime_vs_mpv = ROOT.TGraphErrors(len(biases),array("d",mean_responses),array("d",risetimes),array("d",err_responses),array("d",risetime_errs))
+	graph_risetime_vs_charge = ROOT.TGraphErrors(len(biases),array("d",mean_charges),array("d",risetimes),array("d",err_charges),array("d",risetime_errs))
+	graph_slew_vs_charge = ROOT.TGraphErrors(len(biases),array("d",mean_charges),array("d",slewrates),array("d",err_charges),array("d",slewrate_errs))
 
 	graph_charge_vs_amp = ROOT.TGraphErrors(len(biases),array("d",mean_responses),array("d",mean_charges),array("d",err_responses),array("d",err_charges))
 	graph_res_vs_charge = ROOT.TGraphErrors(len(biases),array("d",mean_charges),array("d",time_res),array("d",err_charges),array("d",err_time_res))
+	graph_res_corr_vs_charge = ROOT.TGraphErrors(len(biases),array("d",mean_charges),array("d",time_res_corr),array("d",err_charges),array("d",err_time_res))
 
 
 	## give tgraphs names so they can be saved to preserve python scope for multi-scan overlay 
-	graph.SetName("gr%i"%scan_num)
-	graph_charge.SetName("grcharge%i"%scan_num)
-	graph_lgadbias.SetName("grlgad%i"%scan_num)
-	graph_current_lgadbias.SetName("griv%i"%scan_num)
-	graph_time_res.SetName("grres%i"%scan_num)
-	graph_slew_rate.SetName("grslew%i"%scan_num)
-	graph_risetime.SetName("grrise%i"%scan_num)
-	graph_snr.SetName("grsnr%i"%scan_num)
-	graph_res_vs_snr.SetName("grres_vs_snr%i"%scan_num)
-	graph_res_vs_slew.SetName("grres_vs_slew%i"%scan_num)
-	graph_res_vs_mpv.SetName("grres_vs_mpv%i"%scan_num)
-	graph_mpv_vs_snr.SetName("grmpv_vs_snr%i"%scan_num)
-	graph_risetime_vs_mpv.SetName("grrisetime_vs_mpv%i"%scan_num)
+	graph.SetName("gr%i_%i"%(scan_num,chan))
+	graph_charge.SetName("grcharge%i_%i"%(scan_num,chan))
+	graph_charge_transpose.SetName("grcharge_tranpose%i_%i"%(scan_num,chan))
+	graph_temp_bias.SetName("grtemp_bias%i_%i"%(scan_num,chan))
+	graph_lgadbias.SetName("grlgad%i_%i"%(scan_num,chan))
+	graph_current_lgadbias.SetName("griv%i_%i"%(scan_num,chan))
+	graph_time_res.SetName("grres%i_%i"%(scan_num,chan))
+	graph_slew_rate.SetName("grslew%i_%i"%(scan_num,chan))
+	graph_risetime.SetName("grrise%i_%i"%(scan_num,chan))
+	graph_snr.SetName("grsnr%i_%i"%(scan_num,chan))
+	graph_jitter.SetName("grjitter%i_%i"%(scan_num,chan))
+	graph_res_vs_snr.SetName("grres_vs_snr%i_%i"%(scan_num,chan))
+	graph_res_vs_slew.SetName("grres_vs_slew%i_%i"%(scan_num,chan))
+	graph_res_vs_mpv.SetName("grres_vs_mpv%i_%i"%(scan_num,chan))
+	graph_mpv_vs_snr.SetName("grmpv_vs_snr%i_%i"%(scan_num,chan))
+	graph_risetime_vs_mpv.SetName("grrisetime_vs_mpv%i_%i"%(scan_num,chan))
+	graph_risetime_vs_charge.SetName("grrisetime_vs_charge%i_%i"%(scan_num,chan))
+	graph_slew_vs_charge.SetName("grslew_vs_charge%i_%i"%(scan_num,chan))
 
-	graph_charge_vs_amp.SetName("grcharge_vs_amp%i"%scan_num)
-	graph_res_vs_charge.SetName("grres_vs_charge%i"%scan_num)
-
+	graph_charge_vs_amp.SetName("grcharge_vs_amp%i_%i"%(scan_num,chan))
+	graph_res_vs_charge.SetName("grres_vs_charge%i_%i"%(scan_num,chan))
+	graph_res_corr_vs_charge.SetName("grres_corr_vs_charge%i_%i"%(scan_num,chan))
 
 	##convert rows to columns
 	col_mean_noise = zip(*mean_noise)
@@ -514,31 +671,36 @@ def get_scan_results(scan_num,chan):
 		graphs_noise[-1].SetTitle("Noise in channel %i, scan %i" %(ichan,scan_num))
 	#mgraph.Add(graph_norm)
 
-	chan=2
+	#chan=2
 	graph_lgadnoise_vs_bias = ROOT.TGraphErrors(len(biases),array("d",lgad_biases),array("d",col_mean_noise[chan]),array("d",[0.1 for i in biases]),array("d",col_err_noise[chan]))
-	graph_lgadnoise_vs_bias.SetName("grlgadnoise_vs_bias%i"%scan_num)
+	graph_lgadnoise_vs_bias.SetName("grlgadnoise_vs_bias%i_%i"%(scan_num,chan))
 	
-	return graph,graph_MCP,graph_temp,graph_lgadbias,graph_current_lgadbias,graphs_noise,graph_time_res,graph_snr,graph_res_vs_snr,graph_res_vs_mpv,graph_mpv_vs_snr,graph_slew_rate,graph_res_vs_slew,graph_risetime,graph_risetime_vs_mpv,graph_lgadnoise_vs_bias,graph_charge,graph_charge_vs_amp,graph_res_vs_charge
+	return graph,graph_MCP,graph_temp,graph_temp_bias,graph_lgadbias,graph_current_lgadbias,graphs_noise,graph_time_res,graph_snr,graph_res_vs_snr,graph_res_vs_mpv,graph_mpv_vs_snr,graph_slew_rate,graph_res_vs_slew,graph_risetime,graph_risetime_vs_mpv,graph_lgadnoise_vs_bias,graph_charge,graph_charge_vs_amp,graph_res_vs_charge,graph_res_corr_vs_charge,graph_charge_transpose,graph_risetime_vs_charge,graph_slew_vs_charge,graph_jitter
 	
 
 
 if len(sys.argv) < 2:
     sys.exit('Please provide a series number') 
 
-series_num = int(sys.argv[1])
-series_txt_filename="series/series%i.txt" % series_num
+series_num = sys.argv[1]
+series_txt_filename="series/series%s.txt" % series_num
 scan_nums=[]
 names=[]
 temps=[]
 chans=[]
+BV_for_charges=[]
+Temp_for_charges=[]
 with open(series_txt_filename) as series_txt_file:
 		for line in series_txt_file:
 			if len(line.split(","))==0: continue
 			if line[:1] == "#": continue
 			scan_nums.append(int(line.split(",")[0]))		
 			names.append(line.split(",")[1])
-			temps.append(int(line.split(",")[2]))
-			if scan_nums[-1]!=1: chans.append(2) # LGAD channel.
+			temps.append(float(line.split(",")[2]))
+			if scan_nums[-1]!=1: 
+				if "chan" in names[-1]:
+					chans.append(int(names[-1].split("chan")[1][0]))
+				else: chans.append(2) # LGAD channel.
 			else: chans.append(0)
 			# if "ch" in line.split(",")[3]: 
 			# 	human_channel_num = int(line.split(",")[3].split("ch")[1].split()[0])
@@ -548,23 +710,32 @@ with open(series_txt_filename) as series_txt_file:
 
 outFile = ROOT.TFile("buffer.root","RECREATE")
 for i,scan_num in enumerate(scan_nums):
-	graph,graph_MCP,graph_temp,graph_lgadbias,graph_current_lgadbias,graphs_noise,graph_time_res,graph_snr,graph_res_vs_snr,graph_res_vs_mpv,graph_mpv_vs_snr,graph_slew_rate,graph_res_vs_slew,graph_risetime,graph_risetime_vs_mpv, graph_lgadnoise_vs_bias,graph_charge,graph_charge_vs_amp,graph_res_vs_charge = get_scan_results(scan_num,chans[i])
+	graph,graph_MCP,graph_temp,graph_temp_bias,graph_lgadbias,graph_current_lgadbias,graphs_noise,graph_time_res,graph_snr,graph_res_vs_snr,graph_res_vs_mpv,graph_mpv_vs_snr,graph_slew_rate,graph_res_vs_slew,graph_risetime,graph_risetime_vs_mpv, graph_lgadnoise_vs_bias,graph_charge,graph_charge_vs_amp,graph_res_vs_charge,graph_res_corr_vs_charge,graph_charge_transpose,graph_risetime_vs_charge,graph_slew_vs_charge,graph_jitter = get_scan_results(scan_num,chans[i])
 	graph_lgadbias.Write()
 	graph.Write()
 	graph_charge.Write()
+	graph_charge_transpose.Write()
+	graph_temp_bias.Write()
 	graph_current_lgadbias.Write()
 	graph_time_res.Write()
 	graph_snr.Write()
+	graph_jitter.Write()
 	graph_res_vs_snr.Write()
 	graph_res_vs_mpv.Write()
 	graph_mpv_vs_snr.Write()
 	graph_slew_rate.Write()
+	graph_slew_vs_charge.Write()
 	graph_res_vs_slew.Write()
 	graph_risetime.Write()
 	graph_risetime_vs_mpv.Write()
+	graph_risetime_vs_charge.Write()
 	graph_lgadnoise_vs_bias.Write()
 	graph_charge_vs_amp.Write()
 	graph_res_vs_charge.Write()
+	graph_res_corr_vs_charge.Write()
+
+	BV_for_charges.append(round(graph_charge_transpose.Eval(charge_thresh),2))
+	Temp_for_charges.append(round(graph_temp_bias.Eval(charge_thresh),4))
 
 	for graph_noise in graphs_noise: graph_noise.Write()
 	plot_single_scan(scan_num,graph,graph_MCP,graph_temp,graph_lgadbias,graph_current_lgadbias,graph_time_res,names[i],temps[i])
@@ -572,7 +743,22 @@ for i,scan_num in enumerate(scan_nums):
 
 outFile.Save()
 
-for i in range(16):
+for i in range(20):
 	plot_overlay(outFile,names,temps,series_num,i+1)
+
+outtable_BV = open("series%s_BV_for_%ifC.txt"%(series_num,charge_thresh),"w")
+for i in range(len(names)):
+	print names[i], "bias to reach %i fC: "%charge_thresh,BV_for_charges[i]
+	outtable_BV.write(",".join([names[i],str(BV_for_charges[i])+"\n"]))
+
+outtable_BV.close()
+
+outtable_BV_temp = open("series%s_temp_for_%ifC.txt"%(series_num,charge_thresh),"w")
+for i in range(len(names)):
+	print names[i], "temp to reach %i fC: "%charge_thresh,Temp_for_charges[i]
+	outtable_BV_temp.write(",".join([names[i],str(Temp_for_charges[i])+"\n"]))
+
+outtable_BV_temp.close()
+
 
 

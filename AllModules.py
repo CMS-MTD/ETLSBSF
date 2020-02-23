@@ -14,7 +14,7 @@ from subprocess import Popen, PIPE
 import pipes
 from pipes import quote
 import argparse
-#import visa
+import visa
 import time
 from GetEnv import *
 from bisect import bisect_left
@@ -27,16 +27,15 @@ RunFilename = "/home/daq/otsdaq/srcs/otsdaq_cmstiming/Data_2018_09_September/Ser
 RunFilenameManual = "/home/daq/otsdaq/srcs/otsdaq_cmstiming/Data_2018_09_September/ServiceData/RunNumber/ManualRunNumber.txt"
 
 ### Voltage Scan Parameters ###
-InitialVoltage = -110 
-#FinalVoltage = -600
-FinalVoltage = -175
-VoltageStep = -5
-VoltageSettleTime = 300 #previously 10
+InitialVoltage = -150 
+FinalVoltage = -230
+VoltageStep = -10
+VoltageSettleTime = 300 #300 #previously 10
 MeasTimeInterval = 10 #Give an int, should be less than voltage settle time
-InitialCurrentSettleTime = 5000 # time before first run [s]
-Compliance = 3e-06
-CurrRange = 1e-06 #e-06 = microamps
-ComplianceRange = 0.3e-06 #if the current reaches within this window around the compliance current, a warning will be sent to your email
+InitialCurrentSettleTime = 500#1000 #5000 # time before first run [s]
+Compliance = 1e-06 # 2e-06#18e-06
+CurrRange = 1e-05#1e-05 #e-06 = microamps
+ComplianceRange = 0.5e-06 #if the current reaches within this window around the compliance current, a warning will be sent to your email
 VoltageRampDownSettleTime = 1
 SBSFBaseDir = '/home/daq/BiasScan/ETLSBSF/'
 ScanFilename = '%sNextScanNumber.txt' % SBSFBaseDir
