@@ -27,12 +27,12 @@ RunFilename = "/home/daq/otsdaq/srcs/otsdaq_cmstiming/Data_2018_09_September/Ser
 RunFilenameManual = "/home/daq/otsdaq/srcs/otsdaq_cmstiming/Data_2018_09_September/ServiceData/RunNumber/ManualRunNumber.txt"
 
 ### Voltage Scan Parameters ###
-InitialVoltage = -150 
-FinalVoltage = -230
-VoltageStep = -10
+InitialVoltage = -160 
+FinalVoltage = -220
+VoltageStep = -5
 VoltageSettleTime = 300 #300 #previously 10
 MeasTimeInterval = 10 #Give an int, should be less than voltage settle time
-InitialCurrentSettleTime = 500#1000 #5000 # time before first run [s]
+InitialCurrentSettleTime = 1500#1000 #5000 # time before first run [s]
 Compliance = 1e-06 # 2e-06#18e-06
 CurrRange = 1e-05#1e-05 #e-06 = microamps
 ComplianceRange = 0.5e-06 #if the current reaches within this window around the compliance current, a warning will be sent to your email

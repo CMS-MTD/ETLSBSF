@@ -12,7 +12,7 @@ ROOT.gStyle.SetTitleFont(42,"xyz")
 ROOT.gStyle.SetTitleFont(42,"t")
 #ROOT.gStyle.SetTitleSize(0.05)
 ROOT.gStyle.SetTitleSize(0.06,"xyz")
-ROOT.gStyle.SetTitleSize(0.06,"t")
+ROOT.gStyle.SetTitleSize(0.06,"t") 
 ROOT.gStyle.SetPadBottomMargin(0.14)
 ROOT.gStyle.SetPadLeftMargin(0.14)
 ROOT.gStyle.SetTitleOffset(1,'y')
@@ -51,7 +51,10 @@ def get_min_amp(run):
 	if run>=151896 and run<=151902: minAmp=45
 	if run>=151994 and run<=151997: minAmp=45
 	elif run>=152104 and run<=152108: minAmp=50
-
+	if run>=27000 and run<30000: minAmp=35
+	# if run>=27338 and run<30000: minAmp=60
+	if run>=27250 and run<=27268: minAmp=70
+	if run>=28256 and run<=28267: minAmp=15
 
 	return minAmp
 
@@ -241,6 +244,8 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 			leg = ROOT.TLegend(0.5,0.52,0.85,0.86)
 		else:
 			leg = ROOT.TLegend(0.46,0.62,0.87,0.86)
+	# if series_num=="TB":
+	# 	leg = ROOT.TLegend(0.17,0.56,0.50,0.86)
 	leg.SetMargin(0.15)
 
 
@@ -255,12 +260,12 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 		#else: graph = outFile.Get(filename+str(scan))
 	 	tb = scan==1
 	 	
-	 	if "temp" in series_num or "Feb" in series_num or "W2" in series_num or "Sergey" in series_num or series_num=="2": cosmetic_tgraph(graph,i,tb)
+	 	if "TB in series_num" or "temp" in series_num or "Feb" in series_num or "W2" in series_num or "Sergey" in series_num or series_num=="2": cosmetic_tgraph(graph,i,tb)
 	 	else: cosmetic_tgraph_organized(graph,names[i],tb)
 		mgraph.Add(graph)
 		if series_num=="CMSATLAS" and "ATLAS" in names[i]: continue
 		if showtemp:
-		 	leg.AddEntry(graph, "%s, %i C" %(names[i],temps[i]),"EP")
+		 	leg.AddEntry(graph, "%s, %i C" %(names[i].replace("(chan0)",""),temps[i]),"EP")
 		elif showCMS:
 			leg.AddEntry(graph, "%s" %(names[i]),"EP")
 		else: 
@@ -271,6 +276,7 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 	mgraph.Draw("AP")
 	if y_axis == "Risetime [ps] (10 to 90%)":
 		mgraph.GetYaxis().SetRangeUser(350,1000)
+		if series_num == "TB": mgraph.GetYaxis().SetRangeUser(350,850)
 	if plottype==16 or plottype==17: 
 		mgraph.GetYaxis().SetRangeUser(20,65)
 	#if plottype==3: mgraph.SetTitle("; Bias voltage [V]; Current [100 nA]")
@@ -341,11 +347,25 @@ def get_time_res_channel(tree,ch,run=-1):
 		mint = 4.7e-9
 		maxt = 5.7e-9
 
+	if run>27000 and run<30000:
+		mint = 6.4e-9 
+		maxt = 7.4e-9
+
+	if run>28200 and run<30000:
+		mint = 3.5e-9 
+		maxt = 4.5e-9
+
 	hist = ROOT.TH1D("h","",70,mint,maxt)
 	
 	photek_thresh = 15
 	photek_max = 200
 	if run>=2022 and run<= 2028: photek_thresh=50
+	if run>27000 and run<30000:
+		photek_thresh =50
+		photek_max = 100
+	if run>28200 and run<30000:
+		photek_thresh =60
+		photek_max = 120
 	tree.Project("h","LP2_15[%i]-LP2_20[3]"%ch,"amp[%i]>15 && amp[3]>%i && amp[3]<%i && LP2_20[3]!=0 && LP2_20[%i]!=0"%(ch,photek_thresh,photek_max,ch))	
 	f1 = ROOT.TF1("f1","gaus",5.8e-9,6.8e-9)
 
@@ -415,17 +435,18 @@ def get_mean_response_channel(tree,ch,run=-1):
 	return f1.GetParameter(1),f1.GetParError(1)
 
 def get_charge_channel(tree,ch,run=-1):
+	histname = "h%i"%run
 	minAmp = get_min_amp(run)
 	if run >= 151357 and run<=151374: 
-		hist = ROOT.TH1D("h","",40,1,30)
+		hist = ROOT.TH1D(histname,"",40,1,30)
 		minAmp=10.
-	elif run>=151982 and run<=151997 and ch==1: hist = ROOT.TH1D("h","",100,2,500)
-	elif run>=152104 and run<=152108: hist = ROOT.TH1D("h","",100,2,900)
-	else: hist = ROOT.TH1D("h","",50,2,100)
+	elif run>=151982 and run<=151997 and ch==1: hist = ROOT.TH1D(histname,"",100,2,500)
+	elif run>=152104 and run<=152108: hist = ROOT.TH1D(histname,"",100,2,900)
+	else: hist = ROOT.TH1D(histname,"",50,2,100)
 
 
 
-	tree.Project("h","-1000*integral[%i]*1e9*50/4700"%ch,"amp[%i]>%f&&amp[3]>10"%(ch,minAmp))
+	tree.Project(histname,"-1000*integral[%i]*1e9*50/4700"%ch,"amp[%i]>%f&&amp[3]>10"%(ch,minAmp))
 	
 	fitter = lg.LanGausFit()
 	#fitter.SetParLimits(1,25,1000)
@@ -434,13 +455,14 @@ def get_charge_channel(tree,ch,run=-1):
 	# ROOT.TF1("f1","landau",0,150)
 	#hist.Fit(f1)
 	if run>0:
-		c = ROOT.TCanvas()
+		c = ROOT.TCanvas("c1_%i"%run)
 		hist.SetTitle(";Integrated charge [fC];Events")
 		hist.Draw()
 		f1.Draw("same")
 		if ch==2: c.Print("plots/runs/Run%i_charge.pdf"%run)
 		else: c.Print("plots/runs/Run%i_ch%i_charge.pdf"%(run,ch))
-		#c.Print("plots/runs/Run%i_charge.root"%run)
+		# c.Print("plots/runs/Run%i_charge.root"%run)
+		# c.Print("plots/runs/Run%i_charge.C"%run)
 	return f1.GetParameter(1),f1.GetParError(1)
 
 
@@ -518,8 +540,19 @@ def get_scan_results(scan_num,chan):
 	with open(scan_txt_filename) as scan_txt_file:
 		for line in scan_txt_file:
 			if line[:1] == "#": continue
-			runs.append(int(line.split("\t")[0]))		
+			this_run = line.split("\t")[0]
+
+			if "-" not in this_run: 
+				runs.append(int(line.split("\t")[0]))
+			else:
+				run_start = int(this_run.split("-")[0])
+				run_end = int(this_run.split("-")[1])
+				runs.append(range(run_start,run_end+1))
+
+
 		 	biases.append(abs(float(line.split("\t")[1])))
+		 	if scan_num==165: biases[-1] = biases[-1]-5. ### 20 degrees to 16 degrees on chiller.
+			# if scan_num==10002: biases[-1] = biases[-1]+2. ### probably 2 degrees colder at MTEST
 			biases_meas.append(abs(float(line.split("\t")[2])))
 
 			current_units_conversion = 10. # = 100 nanoamps scale
@@ -531,14 +564,18 @@ def get_scan_results(scan_num,chan):
 
 			temps.append(float(line.split("\t")[4]))
 
-			if biases[-1]>0 and abs(biases_meas[-1]-biases[-1])/biases[-1] > 0.1:
-				print "[WARNING]: Scan %i, run %i set to %.0f V, measured at %.0f V" % (scan_num, runs[-1],biases[-1],biases_meas[-1])
+			# if biases[-1]>0 and abs(biases_meas[-1]-biases[-1])/biases[-1] > 0.1:
+				# print "[WARNING]: Scan %i, run %i set to %.0f V, measured at %.0f V" % (scan_num, runs[-1],biases[-1],biases_meas[-1])
 
 
 	for i,run in enumerate(runs):
 		#open root file/tree
 		tree = ROOT.TChain("pulse")
-		tree.Add("/home/daq/ScopeData/Reco/run_scope%i.root" % run)
+		if type(run) is list:
+			for r in run: tree.Add("/home/daq/ScopeData/Reco/run_scope%i.root" % r)
+			run = run[0]
+		else:
+			tree.Add("/home/daq/ScopeData/Reco/run_scope%i.root" % run)
 		
 		if chan <0:
 			mean,err = get_mean_response(tree) ### find max amp channel
