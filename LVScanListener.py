@@ -5,6 +5,7 @@ from AllModules import *
 BoardName = raw_input("Board Name : ") 
 SensorName = raw_input("Sensor Name : ")
 ChillerTemp = raw_input("ChillerTemperature (C): ")
+LaserTune = raw_input("LaserTune [%] (enter 0 for beta source): ")
 
 Resource = InitiateResource()
 StartTime = datetime.now() 
@@ -39,11 +40,13 @@ while abs(Voltage) <= abs(FinalVoltage):
         Temp16,Temp20,Temp17,Temp18,Temp19 = ConvertEnv(EnvTimestamp)
 
         ##### Write scan data for this run
-        WriteVoltageScanDataFile(ScanNumber, RunNumber, Voltage, MeasVoltage, MeasCurrent, Temp16,Temp20,Temp17,Temp18,Temp19)
+        WriteVoltageScanDataFile(ScanNumber, RunNumber, Voltage, MeasVoltage, MeasCurrent, Temp16,Temp20,Temp17,Temp18,Temp19,LaserTune)
         
         if InitialVoltage != FinalVoltage:
             Voltage = Voltage + VoltageStep
-
+            if numberOfOddVoltagesToSkip > 0: 
+                Voltage = Voltage + VoltageStep
+                numberOfOddVoltagesToSkip = numberOfOddVoltagesToSkip - 1
         #if abs(Voltage) > abs(FinalVoltage):
             
             ## Ryan: I don't see the point of this option and I don't want it to remain for very long at top voltage, and I don't like how the last measurement could happen after a very long delay, depending on user.
@@ -72,4 +75,4 @@ SendAutopilotGreenSignal() ## ask autopilot to stop
 
 StopTime = datetime.now()
 print "\n*********************** Scan %d complete ****************************" % ScanNumber
-print '%d,%s,%s,%d,%d,%s,%s,%s,%f,%i,%i' %(ScanNumber, str(StartTime), str(StopTime), StartRunNumber, RunNumber, SensorName,BoardName, ChillerTemp, Temp20, FinalVoltage, VoltageStep)
+print '%d,%s,%s,%d,%d,%s,%s,%s,%f,%i,%i,%s' %(ScanNumber, str(StartTime), str(StopTime), StartRunNumber, RunNumber, SensorName,BoardName, ChillerTemp, Temp16, FinalVoltage, VoltageStep,LaserTune)

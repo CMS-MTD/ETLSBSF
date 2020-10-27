@@ -60,7 +60,8 @@ def SetVoltage(Resource, ScanNumber, Voltage, VoltageSettleTime = 15, Debug = Fa
             # print "currenttime",CurrentTime
             Temp16,Temp20,Temp17,Temp18,Temp19 = ConvertEnv(EnvTimestamp)
 
-            WriteEnvScanDataFile(ScanNumber, CurrentTime, MeasVoltage, MeasCurrent, Temp16,Temp20,Temp17,Temp18,Temp19)
+            if ScanNumber>1:
+                WriteEnvScanDataFile(ScanNumber, CurrentTime, MeasVoltage, MeasCurrent, Temp16,Temp20,Temp17,Temp18,Temp19)
 
             time.sleep(MeasTimeInterval)
             
@@ -83,25 +84,46 @@ def SetVoltage(Resource, ScanNumber, Voltage, VoltageSettleTime = 15, Debug = Fa
     #print CurrentReturned
     return VoltageReturned, CurrentReturned
 
+def ReadVoltage(Resource):
+    ReadCMD = ':READ?'
+    ReadMeas = Resource.query(ReadCMD)
+    VoltageReturned = float(ReadMeas.split(",")[0])
+    CurrentReturned = float(ReadMeas.split(",")[1])
 
-def IVScan(FinalVoltage, VoltageSettleTime, IVScanNumber, InitialSleepTime):
+    return VoltageReturned, CurrentReturned
+
+
+def IVScan(IVScanNumber, InitVoltage, FinalVoltage, voltage_step, VoltageSettleTime=10, MeasTimeInterval=5,  InitialSleepTime=5):
 
     Resource = InitiateResource()
     time.sleep(InitialSleepTime)
     ReadCMD = ':READ?'
 
-    CurrentVoltage = -10
-    MeasTimeInterval = 10
-    VoltageList = []
-    CurrentList = []
+    CurrentVoltage = 0
+    while CurrentVoltage > InitVoltage:     
+        SetVoltageCMD = ':SOUR:VOLT %f' % CurrentVoltage
+        Resource.write(SetVoltageCMD)
+        time.sleep(1)
+        CurrentVoltage = CurrentVoltage - voltage_step
+        if CurrentVoltage <= InitVoltage:
+            CurrentVoltage = InitVoltage
+            SetVoltageCMD = ':SOUR:VOLT %f' % CurrentVoltage
+            Resource.write(SetVoltageCMD)
 
+    voltage_up=[]
+    voltage_down=[]
+    current_up=[]
+    current_down=[]
+
+    # print CurrentVoltage, FinalVoltage
     while CurrentVoltage > FinalVoltage:
 
         SetVoltageCMD = ':SOUR:VOLT %f' % CurrentVoltage
+        print 'Setting voltage to %i V' % CurrentVoltage
         Resource.write(SetVoltageCMD)
 
         i = 0
-        while MeasTimeInterval * i <= VoltageSettleTime:
+        while MeasTimeInterval * i < VoltageSettleTime:
             time.sleep(MeasTimeInterval)
 
             ReadMeas = Resource.query(ReadCMD)
@@ -109,14 +131,17 @@ def IVScan(FinalVoltage, VoltageSettleTime, IVScanNumber, InitialSleepTime):
             VoltageReturned = float(ReadMeas.split(",")[0])
             CurrentReturned = float(ReadMeas.split(",")[1])
             
-            VoltageList.append(VoltageReturned)            
-            CurrentList.append(CurrentReturned)
             WriteIVScanDataFile(VoltageReturned, CurrentReturned, IVScanNumber)
+            print VoltageReturned,CurrentReturned
+            voltage_up.append(float(VoltageReturned))
+            current_up.append(float(CurrentReturned))
+
             i = i + 1
 
-        CurrentVoltage = CurrentVoltage - 10
+        CurrentVoltage = CurrentVoltage + voltage_step
         if CurrentVoltage <= FinalVoltage:
             CurrentVoltage = FinalVoltage
+            print 'Setting voltage to %i V' % CurrentVoltage
             SetVoltageCMD = ':SOUR:VOLT %f' % CurrentVoltage
             Resource.write(SetVoltageCMD)
 
@@ -127,24 +152,28 @@ def IVScan(FinalVoltage, VoltageSettleTime, IVScanNumber, InitialSleepTime):
         Resource.write(SetVoltageCMD)
 
         i = 0
-        while MeasTimeInterval * i <= VoltageSettleTime:
+        while MeasTimeInterval * i < VoltageSettleTime:
             time.sleep(MeasTimeInterval)
 
             ReadMeas = Resource.query(ReadCMD)
 
             VoltageReturned = float(ReadMeas.split(",")[0])
             CurrentReturned = float(ReadMeas.split(",")[1])
-            
-            VoltageList.append(VoltageReturned)            
-            CurrentList.append(CurrentReturned)
+            print VoltageReturned,CurrentReturned
+            voltage_down.append(float(VoltageReturned))
+            current_down.append(float(CurrentReturned))
+
             WriteIVScanDataFile(VoltageReturned, CurrentReturned, IVScanNumber)
             i = i + 1
 
-        CurrentVoltage = CurrentVoltage + 10
+        CurrentVoltage = CurrentVoltage - voltage_step
         if CurrentVoltage >= FinalVoltage:
             CurrentVoltage = FinalVoltage
+            print 'Setting voltage to %i V' % CurrentVoltage
             SetVoltageCMD = ':SOUR:VOLT %f' % CurrentVoltage
             Resource.write(SetVoltageCMD)
+
+    return voltage_up,current_up,voltage_down,current_down
 
 def TimeScan(Voltage, Time, FileNumber):
     #import matplotlib.pyplot as plt

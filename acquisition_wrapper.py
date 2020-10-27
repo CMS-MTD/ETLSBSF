@@ -1,7 +1,7 @@
 from AllModules import *
 from FileComm import *
 ### if sample rate or horizontal window is changed, TimingDAQ must be recompiled to account for new npoints.
-sampleRate = 20 #GSa/s
+sampleRate = 20#40 #20 #GSa/s
 horizontalWindow = 50 #ns
 
 #Hard Code these:
@@ -10,11 +10,23 @@ trig = -0.01 #-0.01 #V
 
 vScale1 = 0.05
 vScale2 = 0.05 
-vScale3 = 0.05 
+vScale3 = 0.05 #0.07 #0.05 
 vScale4 = 0.01 #0.01 
 
 trigSlope = "NEG"
 timeoffset = 0 #ns
+
+if laserMode: 
+	trigCh="1"
+	trig =0.6
+	trigSlope="POS"
+	vScale1 = 1.
+	vScale2 = 0.10
+	vScale3 = 0.2
+	timeoffset=55
+
+
+
 
 RunNumber = -1
 

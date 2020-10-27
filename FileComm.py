@@ -78,9 +78,9 @@ def LowVoltageBoolean():
     IncludeLowVoltageHandle.close()
     return LVBool
 
-def WriteVoltageScanDataFile(ScanNumber, RunNumber, Voltage, MeasVoltage, MeasCurrent, Temp16,Temp20,Temp17,Temp18,Temp19):
+def WriteVoltageScanDataFile(ScanNumber, RunNumber, Voltage, MeasVoltage, MeasCurrent, Temp16,Temp20,Temp17,Temp18,Temp19,LaserTune):
     ScanDataFileHandle = open(VoltageScanDataFileName + 'scan' + str(ScanNumber) + '.txt' ,"a+")
-    ScanDataFileHandle.write(str(RunNumber) + "\t" + str(Voltage) + "\t" + str(MeasVoltage) + "\t" + str(MeasCurrent) + "\t" + str(Temp16) + "\t" + str(Temp20) + "\t" + str(Temp17) + "\t" + str(Temp18) + "\t" + str(Temp19) + "\n")
+    ScanDataFileHandle.write(str(RunNumber) + "\t" + str(Voltage) + "\t" + str(MeasVoltage) + "\t" + str(MeasCurrent) + "\t" + str(Temp16) + "\t" + str(Temp20) + "\t" + str(Temp17) + "\t" + str(Temp18) + "\t" + str(Temp19) + "\t" + str(LaserTune)+"\n" )
     ScanDataFileHandle.close()
 
 def WriteEnvScanDataFile(ScanNumber, CurrentTime, MeasVoltage, MeasCurrent, Temp16,Temp20,Temp17,Temp18,Temp19):
