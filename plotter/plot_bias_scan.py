@@ -3,6 +3,7 @@ import os, sys, re
 import ROOT
 from array import array
 import langaus as lg
+import copy
 
 ROOT.gROOT.SetBatch(ROOT.kTRUE)
 ROOT.gStyle.SetLabelFont(42,"xyz")
@@ -29,12 +30,21 @@ six=ROOT.TColor(2006,0.906,0.878,0.094)
 colors = [1,2001,2002,2003,2004,2005,2006,6,2,3,4,6,7,5,1,8,9,29,38,46,1,2001,2002,2003,2004,2005,2006]
 
 verbose = True
-charge_thresh = 20 #fC
+charge_thresh = 15 #fC
 photek_res = 15 #ps for beta
 photek_res_beam = 9 #ps
 diodeTarget = 41. #mV
 PiNCharge = 0.36 #fC
 doAverage=False
+doCFDScan=False
+
+def get_extra_cut(run,ch):
+	extra_cut = ""
+	if run>=152852 and run<= 152859: ## crosstalk in 3rd gen sergey board.
+		if ch==2: extra_cut="&& amp[2]>amp[1]"
+		elif ch==1: extra_cut="&& amp[1]>amp[2]"
+	return extra_cut
+
 
 def get_min_amp(run):
 	minAmp =15
@@ -73,6 +83,10 @@ def get_min_amp(run):
 	if run>=152961 and run<=152965: minAmp=45
 	if run>=152973 and run<=152979: minAmp=45
 	if run>=152980 and run<=152983: minAmp=100
+	if run>=153005 and run<=153006: minAmp=60
+	if run>=153010 and run<=153021: minAmp=45
+	if run>=153034 and run<=153037: minAmp=50
+	if run>=153038 and run<=153039: minAmp=90
 
 	return minAmp
 
@@ -168,9 +182,9 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 		x_axis = "Signal to noise ratio"
 		filename = "grres_vs_snr"
 	if plottype==7: 
-		outputtag = "_res_vs_mpv"
-		y_axis = "Time resolution [ps]"
-		x_axis = "MPV Ru106 response [mV]"
+		outputtag = "_res_vs_amp"
+		y_axis = "Time resolution, LGAD only [ps]"
+		x_axis = "MPV amplitude [mV]"
 		filename = "grres_vs_mpv"
 	if plottype==8: 
 		outputtag = "_mpv_vs_snr"
@@ -307,63 +321,94 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 		y_axis = "Charge of average pulse [fC]"
 		x_axis = "Bias voltage [V]"
 		filename = "gr_charge_average"
-
 	if plottype==35: 
 		outputtag = "_gain"
 		y_axis = "Laser gain"
 		x_axis = "Bias voltage [V]"
 		filename = "gr_gain"
-
 	if plottype==36: 
 		outputtag = "_timeres_corr"
 		y_axis = "Time resolution, LGAD only [ps]"
 		x_axis = "Bias voltage [V]"
 		filename = "grres_corr"
-
 	if plottype==37: 
 		outputtag = "_timeres_cfd_scan"
 		y_axis = "Time resolution, CFD scan [ps]"
 		x_axis = "Bias voltage [V]"
 		filename = "grres_cfd_scan"
-
 	if plottype==38: 
 		outputtag = "_optimum_CFD"
 		y_axis = "Optimum CFD threshold"
 		x_axis = "Bias voltage [V]"
 		filename = "groptimum_CFD"
-
 	if plottype==39: 
 		outputtag = "_cfd_scan_delta"
 		y_axis = "Improvement from optimal CFD threshold"
 		x_axis = "Bias voltage [V]"
 		filename = "grres_cfd_scan_delta"
-	
 	if plottype==40: 
 		outputtag = "_timeres_cfd_scan_corr"
 		y_axis = "Time resolution, LGAD only, CFD scan [ps]"
 		x_axis = "Bias voltage [V]"
 		filename = "grres_cfd_scan_corr"
-
 	if plottype==41: 
 		outputtag = "_lgadnoise_vs_charge"
 		y_axis = "LGAD baseline noise RMS [mV]"
 		x_axis = "MPV collected charge [fC]"
 		filename = "grlgadnoise_vs_charge"
-
-
 	if plottype==42: 
 		outputtag = "_lgadnoise_vs_current"
 		y_axis = "LGAD baseline noise RMS [mV]"
 		x_axis = "Total current [uA]"
 		filename = "grlgadnoise_vs_current"
-
 	if plottype==43: 
 		outputtag = "_charge_vs_current"
 		y_axis = "MPV collected charge [fC]"
 		x_axis = "Total current [uA]"
 		filename = "grcharge_vs_current"
+	if plottype==44: 
+		outputtag = "_chi2_vs_bias"
+		y_axis = "#chi^{2}"
+		x_axis = "Bias voltage [V]"
+		filename = "grres_chi2"
+	if plottype==45: 
+		outputtag = "_timeresCB"
+		y_axis = "Time resolution [ps]"
+		x_axis = "Bias voltage [V]"
+		filename = "grresCB"
+	if plottype==46: 
+		outputtag = "_timeres_corrCB"
+		y_axis = "Time resolution, LGAD only [ps]"
+		x_axis = "Bias voltage [V]"
+		filename = "grres_corrCB"
+	if plottype==47: 
+		outputtag = "_chi2_vs_biasCB"
+		y_axis = "#chi^{2}"
+		x_axis = "Bias voltage [V]"
+		filename = "grres_chi2CB"
 
+	if plottype==48: 
+		outputtag = "_timeres_corr_vs_run"
+		y_axis = "Time resolution, LGAD only [ps]"
+		x_axis = "Run number"
+		filename = "grres_corr_vs_runnum"
 
+	if plottype==49: 
+		outputtag = "_charge_vs_run"
+		y_axis = "MPV collected charge [fC]"
+		x_axis = "Run number"
+		filename = "grcharge_vs_runnum"
+	if plottype==50: 
+		outputtag = "_current_vs_run"
+		y_axis = "Total current [uA]"
+		x_axis = "Run number"
+		filename = "grcurrent_vs_runnum"
+
+	if plottype==51: 
+		outputtag = "_temp_vs_run"
+		y_axis = "Board temperature [C]"
+		x_axis = "Run number"
+		filename = "grtemp_vs_runnum"
 
 	c = ROOT.TCanvas()
 	c.SetGridy()
@@ -378,7 +423,10 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 		showtemp=False
 	if "temp" in series_num: showtemp=True
 	mgraph = ROOT.TMultiGraph()
-	if( plottype == 1 or plottype== 9 or plottype == 14 or plottype==19 or plottype==22 or plottype==24 or plottype==25 or plottype==35 or plottype==39 or plottype==13 or plottype==41 or plottype==3 or plottype==38 or plottype==42 or plottype==43) and series_num!="7":
+	if series_num=="HPK2_8e14_1p5e15":
+		leg = ROOT.TLegend(0.2,0.7,0.83,0.89)
+
+	elif( plottype == 1 or plottype== 9 or plottype == 14 or plottype==19 or plottype==22 or plottype==24 or plottype==25 or plottype==35 or plottype==39 or plottype==13 or plottype==41 or plottype==3 or plottype==38 or plottype==42 or plottype==43) and series_num!="7":
 		if (plottype==1 or plottype==9 or plottype==14) and series_num=="HPK2_8e14": leg = ROOT.TLegend(0.41,0.62,0.63,0.86)
 		elif "PiN" in series_num: leg = ROOT.TLegend(0.5,0.16,0.85,0.40)
 		elif "LaserJune8LowBV" in series_num and plottype!=24 and plottype!=35: leg = ROOT.TLegend(0.5,0.52,0.85,0.86)
@@ -402,11 +450,12 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 
 	if not showtemp: 
 		if series_num=="CMS" or series_num=="CMSATLAS": leg.SetNColumns(3)
+		if series_num=="HPK2_8e14_1p5e15": leg.SetNColumns(3)
 		if series_num=="ATLAS": leg.SetNColumns(2)
 		#if series_num=="HPK2_8e14": leg.SetNColumns(2)
 
 	for i,scan in enumerate(scan_nums):
-		print filename+str(scan)+"_"+str(chans[i])
+		#print filename+str(scan)+"_"+str(chans[i])
 		#if plottype!=13:
 		graph = outFile.Get(filename+str(scan)+"_"+str(chans[i]))
 		#else: graph = outFile.Get(filename+str(scan))
@@ -417,11 +466,23 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 	 		else: 
 	 			cosmetic_tgraph(graph,i-3,tb)
 	 			graph.SetMarkerStyle(24)
-	 	if "HPK2_8e14" in series_num and "temp" not in series_num:
+	 	if "HPK2_8e14" in series_num and "temp" not in series_num and "1p5" not in series_num:
 	 		if i >= 4: cosmetic_tgraph(graph,i-4,tb)
 	 		else: 
 	 			cosmetic_tgraph(graph,i,tb)
 	 			graph.SetMarkerStyle(24)
+	 	if "HPK2_8e14_1p5e15" in series_num:
+	 		i_color = 0
+	 		if "Split 2" in names[i]: i_color=1
+	 		if "Split 3" in names[i]: i_color=2
+	 		if "Split 4" in names[i]: i_color=3
+
+	 		i_marker = 3
+	 		if "8e14" in  names[i]: i_marker=24
+	 		if "1.5e15" in names[i]: i_marker =20 
+
+	 		cosmetic_tgraph(graph,i_color,tb)
+	 		graph.SetMarkerStyle(i_marker)
 
 	 	elif "TB" in series_num or "temp" in series_num or "Feb" in series_num or "W2" in series_num or "Sergey" in series_num or series_num=="2" or "Laser" in series_num or "HPK2" in series_num: cosmetic_tgraph(graph,i,tb)
 	 	else: cosmetic_tgraph_organized(graph,names[i],tb)
@@ -437,15 +498,32 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 
 	mgraph.SetTitle("; %s; %s"%(x_axis,y_axis))
 	mgraph.Draw("AP")
-	if y_axis == "Risetime [ps] (10 to 90%)":
+	if "stability" in series_num:
+		currentymin = mgraph.GetYaxis().GetXmin()
+		currentymax = mgraph.GetYaxis().GetXmax()
+		if plottype!=51: mgraph.GetYaxis().SetRangeUser(0.7*currentymin, 1.35*currentymax)
+		else: mgraph.GetYaxis().SetRangeUser(1.3*currentymin, 0.7*currentymax) ## negative
+
+	if series_num=="HPK2_8e14_1p5e15":
+		currentymin = mgraph.GetYaxis().GetXmin()
+		currentymax = mgraph.GetYaxis().GetXmax()
+		mgraph.GetYaxis().SetRangeUser(currentymin, 1.35*currentymax)
+
+	if series_num=="HPK2_8e14_temp":
+		currentymin = mgraph.GetYaxis().GetXmin()
+		currentymax = mgraph.GetYaxis().GetXmax()
+		mgraph.GetYaxis().SetRangeUser(currentymin, 1.35*currentymax)
+
+	elif y_axis == "Risetime [ps] (10 to 90%)":
 		mgraph.GetYaxis().SetRangeUser(350,1000)
 		if series_num == "TB": mgraph.GetYaxis().SetRangeUser(350,850)
-	if plottype==16 or plottype==17: 
+	elif plottype==16 or plottype==17: 
 		mgraph.GetYaxis().SetRangeUser(23,65)
+	
 	if (plottype==1 or plottype==14) and "HPK2" in series_num:
 		currentmin = mgraph.GetXaxis().GetXmin()
 		currentmax = mgraph.GetXaxis().GetXmax()
-		print "current min, max ",currentmin,currentmax
+		#print "current min, max ",currentmin,currentmax
 		#currentmax=200
 		#currentmin=70
 		mgraph.GetXaxis().SetLimits(currentmin-50,currentmax)
@@ -453,7 +531,7 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 	#if plottype==3: mgraph.SetTitle("; Bias voltage [V]; Current [100 nA]")
 	if x_axis == "Bias voltage [V]" or "current" in x_axis: mgraph.Draw("AELP")
 	else: mgraph.Draw("AEP")
-	if(len(scan_nums)>1): leg.Draw()
+	if(len(scan_nums)>0): leg.Draw()
 	c.Print("plots/series%s%s.pdf"%(series_num,outputtag))
 
 
@@ -501,6 +579,46 @@ def cosmetic_tgraph_organized(graph,sensorname,tb=False):
 		graph.SetMarkerStyle(29)
 	graph.SetTitle("; Bias voltage [V]; MPV Ru106 response [mV]")
 
+def crystalBallTF1(f1):
+	def crystalBall(x, p):
+		#p[0]: normalization
+		#p[1]: alpha
+		#p[2]: n
+		#p[3]: gaussian sigma
+		#p[4]: gaussian mean
+		return p[0]*ROOT.Math.crystalball_function(x[0],p[1],p[2],p[3],p[4])
+	f2 = ROOT.TF1("f2",crystalBall,f1.GetXmin(),f1.GetXmax(), 5)
+	f2.SetLineColor(ROOT.kBlue)	
+	f2.SetParameter(0, f1.GetParameter(0))
+	f2.SetParameter(1, 0.9)
+	f2.SetParLimits(1, 0.0, 5.0)
+	f2.SetParameter(2, 23)
+	f2.SetParLimits(2, 0.0, 100.0)
+	f2.SetParameter(3, f1.GetParameter(2))
+	f2.SetParLimits(3, 0.1*f1.GetParameter(2), 2.0*f1.GetParameter(2))
+	f2.SetParameter(4, f1.GetParameter(1))
+	f2.SetParLimits(4, 0.1*f1.GetParameter(1), 2.0*f1.GetParameter(1))
+	f2.SetParName(0, "Constant")
+	f2.SetParName(1, "alpha")
+	f2.SetParName(2, "n")
+	f2.SetParName(3, "Sigma")
+	f2.SetParName(4, "Mean")
+	return f2
+
+def getStats(hist):
+	hist.Draw()
+	ROOT.gPad.Update()
+	return hist.FindObject("stats")
+
+def drawMultiStats(st1, st2, c1=ROOT.kRed, c2=ROOT.kBlue):
+	if st1 and st2:
+		st1.SetTextColor(c1)
+    	st2.SetTextColor(c2)
+    	height = st1.GetY2NDC() - st1.GetY1NDC()
+    	st2.SetY1NDC(st1.GetY1NDC() - height)
+    	st2.SetY2NDC(st1.GetY1NDC() )
+    	st1.Draw()
+    	st2.Draw()
 
 def get_time_res_channel(tree,ch,run=-1):
 	#(70,-3.3e-9,-1.6e-9)
@@ -540,21 +658,31 @@ def get_time_res_channel(tree,ch,run=-1):
 
 	# if run < 152719,152731,
 	CFD = 15
-
+	extra_cut = get_extra_cut(run,ch)
 	minAmp = get_min_amp(run)
 	if run >=152719 and run <= 152731: CFD = 30
-	tree.Project("h","LP2_%i[%i]-LP2_20[3]"%(CFD,ch),"amp[%i]>%i && amp[%i]<360 && amp[3]>%i && amp[3]<%i && LP2_20[3]!=0 && LP2_20[%i]!=0"%(ch,minAmp,ch,photek_thresh,photek_max,ch))	
+	tree.Project("h","LP2_%i[%i]-LP2_20[3]"%(CFD,ch),"amp[%i]>%i && amp[%i]<360 && amp[3]>%i && amp[3]<%i && LP2_20[3]!=0 && LP2_20[%i]!=0 %s"%(ch,minAmp,ch,photek_thresh,photek_max,ch,extra_cut))	
 	f1 = ROOT.TF1("f1","gaus",5.8e-9,6.8e-9)
+	hist.Fit(f1,"Q")
+	st1 = copy.deepcopy(getStats(hist)) #Need to deep copy the first stats because root will return a pointer that is overwritten during the next fit
 
-	hist.Fit(f1)
+	f2 = crystalBallTF1(f1)
+	hist.Fit(f2,"Q")
+	st2 = getStats(hist)
 	if run>0:
 		c = ROOT.TCanvas()
+		ROOT.gPad.SetLogy()
 		hist.Draw()
 		f1.Draw("same")
+		f2.Draw("same")
+		drawMultiStats(st1, st2)
+
 		if ch==2: c.Print("plots/runs/Run%i_time.pdf"%run)
 		else: c.Print("plots/runs/Run%i_ch%i_time.pdf"%(run,ch))
-	print 'Run NUmber %d,  %f, %f ' %(run,1e12*f1.GetParameter(2),1e12*f1.GetParError(2))
-	return 1e12*f1.GetParameter(2),1e12*f1.GetParError(2)
+	#print 'Run NUmber %d,  %f, %f ' %(run,1e12*f1.GetParameter(2),1e12*f1.GetParError(2))
+	CBerror = 0.0 if f2.GetParError(3) / f2.GetParameter(3) > 0.1 else f2.GetParError(3)
+	#print '\033[0;31m Run NUmber %d,  %f, %f \033[0m' %(run,1e12*f2.GetParameter(3),1e12*CBerror)
+	return 1e12*f1.GetParameter(2),1e12*f1.GetParError(2),f1.GetChisquare(), 1e12*f2.GetParameter(3),1e12*CBerror,f2.GetChisquare()
 
 def get_optimum_timeres_channel(tree,ch,run=-1):
 		#(70,-3.3e-9,-1.6e-9)
@@ -593,6 +721,7 @@ def get_optimum_timeres_channel(tree,ch,run=-1):
 
 
 	minAmp = get_min_amp(run)
+	extra_cut = get_extra_cut(run,ch)
 
 	CFD_list = [5,10,15,20,25,30,35,40,50,60]
 	res_list=[]
@@ -601,12 +730,17 @@ def get_optimum_timeres_channel(tree,ch,run=-1):
 
 	for CFD in CFD_list:
 		hist.Reset()
-		tree.Project("h","LP2_%i[%i]-LP2_20[3]"%(CFD,ch),"amp[%i]>%i && amp[%i]<360 && amp[3]>%i && amp[3]<%i && LP2_20[3]!=0 && LP2_20[%i]!=0"%(ch,minAmp,ch,photek_thresh,photek_max,ch))	
+		tree.Project("h","LP2_%i[%i]-LP2_20[3]"%(CFD,ch),"amp[%i]>%i && amp[%i]<360 && amp[3]>%i && amp[3]<%i && LP2_20[3]!=0 && LP2_20[%i]!=0 %s"%(ch,minAmp,ch,photek_thresh,photek_max,ch,extra_cut))	
 		f = ROOT.TF1("f%i"%CFD,"gaus",5.8e-9,6.8e-9)
-		hist.Fit(f)
+		hist.Fit(f,"Q")
 		res_list.append(1e12*f.GetParameter(2))
 		unc_list.append(1e12*f.GetParError(2))
-
+		if run>0:
+			c = ROOT.TCanvas()
+			hist.Draw()
+			f.Draw("same")
+			if ch==2: c.Print("plots/runs/Run%i_time%i.pdf"%(run,CFD))
+			else: c.Print("plots/runs/Run%i_ch%i_time%i.pdf"%(run,ch,CFD))
 
 	minres, optimum_idx =  min((val, idx) for (idx, val) in enumerate(res_list))
 	optimum_cfd = CFD_list[optimum_idx]
@@ -629,7 +763,9 @@ def get_optimum_timeres_channel(tree,ch,run=-1):
 def get_slew_rate_channel(tree,ch,run=-1):
 	hist = ROOT.TH1D("h","",60,0,600e9)
 	minAmp = get_min_amp(run)
-	tree.Project("h","abs(risetime[%i])"%ch,"amp[%i]>%i"%(ch,minAmp))	### mV/ s
+	extra_cut = get_extra_cut(run,ch)
+
+	tree.Project("h","abs(risetime[%i])"%ch,"amp[%i]>%i %s"%(ch,minAmp,extra_cut))	### mV/ s
 
 	if run>0:
 		c = ROOT.TCanvas()
@@ -642,9 +778,10 @@ def get_slew_rate_channel(tree,ch,run=-1):
 def get_risetime_channel(tree,ch,run=-1):
 	hist = ROOT.TH1D("h","",60,100,1200)
 	minAmp = get_min_amp(run)
+	extra_cut = get_extra_cut(run,ch)
 
 	#10 to 90 risetime
-	tree.Project("h","1e12*abs(0.8*amp[%i]/risetime[%i])"%(ch,ch),"amp[%i]>%i"%(ch,minAmp))	### mV/ s
+	tree.Project("h","1e12*abs(0.8*amp[%i]/risetime[%i])"%(ch,ch),"amp[%i]>%i %s"%(ch,minAmp,extra_cut))	### mV/ s
 
 	if run>0:
 		c = ROOT.TCanvas()
@@ -701,11 +838,13 @@ def get_mean_response_channel(tree,ch,run=-1,laser=False):
 	if run>=152104 and run<=152108: hist = ROOT.TH1D("h","",50,2,710)
 
 	minAmp = get_min_amp(run)
+	extra_cut = get_extra_cut(run,ch)
+
 	if laser and ch==1: 
 		minAmp=0.5
 		hist = ROOT.TH1D("h","",350,0,350)
 
-	if not laser: selection = "amp[%i]>%f&&amp[3]>10"%(ch,minAmp)
+	if not laser: selection = "amp[%i]>%f&&amp[3]>10 %s"%(ch,minAmp,extra_cut)
 	else: selection =  "amp[%i]>%f"%(ch,minAmp)
 	hist.StatOverflows(True)
 	tree.Project("h","amp[%i]"%ch,selection)
@@ -720,7 +859,7 @@ def get_mean_response_channel(tree,ch,run=-1,laser=False):
 		err=f1.GetParError(1)
 	else: 
 		f1 = ROOT.TF1("f1","gaus",0,500)
-		hist.Fit(f1)
+		hist.Fit(f1,"Q")
 		mean=hist.GetMean()
 		err=hist.GetMeanError()
 	if run>0:
@@ -737,6 +876,7 @@ def get_mean_response_channel(tree,ch,run=-1,laser=False):
 def get_charge_channel(tree,ch,run=-1,laser=False):
 	histname = "h%i"%run
 	minAmp = get_min_amp(run)
+	extra_cut = get_extra_cut(run,ch)
 	if run >= 151357 and run<=151374: 
 		hist = ROOT.TH1D(histname,"",40,1,30)
 		minAmp=10.
@@ -753,7 +893,7 @@ def get_charge_channel(tree,ch,run=-1,laser=False):
 
 	hist.StatOverflows(True)
 
-	if not laser: selection = "amp[%i]>%f&&amp[3]>10"%(ch,minAmp)
+	if not laser: selection = "amp[%i]>%f&&amp[3]>10 %s"%(ch,minAmp,extra_cut)
 	else: selection =  "amp[%i]>%f"%(ch,minAmp)
 	print "Selection is ",selection
 	tree.Project(histname,"-1000*integral[%i]*1e9*50/4700"%ch,selection)
@@ -815,10 +955,12 @@ def get_mean_response(tree):
 	best_chan = means_this_run.index(best_mean)	
 	err = errs_this_run[best_chan]
 
-	print best_mean,err,best_chan
+	#print best_mean,err,best_chan
 
 	return best_mean,err
 
+def addGraph(d, name, npoints, x, y, xerr, yerr):
+	d[name] = ROOT.TGraphErrors(npoints,array("d",x),array("d",y),array("d",xerr),array("d",yerr))
 
 def get_scan_results(scan_num,chan,laser):
 	runs=[]
@@ -862,9 +1004,14 @@ def get_scan_results(scan_num,chan,laser):
 	err_gains=[]
 
 	time_res=[]
+	time_resCB=[]
 	err_time_res=[]
+	err_time_resCB=[]
 
 	time_res_corr=[]
+	time_res_chi2=[]	
+	time_res_corrCB=[]
+	time_res_chi2CB=[]
 
 	CFD_scan_res=[]
 	CFD_scan_res_corr=[]
@@ -957,7 +1104,7 @@ def get_scan_results(scan_num,chan,laser):
 			diodemean,diodeerr= get_mean_response_channel(tree,1,run,laser)
 			diode_charge_mean,diode_charge_err= get_charge_channel(tree,1,run,laser)
 			mean_charge,err_charge = get_charge_channel(tree,chan,run,laser) ## use specified channel from series txt file
-			sigma,sigmaerr = get_time_res_channel(tree,chan,run)
+			sigma,sigmaerr,chi2,sigmaCB,sigmaerrCB,chi2CB = get_time_res_channel(tree,chan,run)
 			slewrate,slewerr = get_slew_rate_channel(tree,chan,run)
 			risetime,riseerr = get_risetime_channel(tree,chan,run)
 
@@ -966,7 +1113,12 @@ def get_scan_results(scan_num,chan,laser):
 
 		noise_means,noise_errs = get_mean_baseline_RMS(tree)
 
-		this_CFD_scan_res,this_err_CFD_scan_res,this_optimum_CFD = get_optimum_timeres_channel(tree,chan,run)
+		if doCFDScan:
+			this_CFD_scan_res,this_err_CFD_scan_res,this_optimum_CFD = get_optimum_timeres_channel(tree,chan,run)
+		else:
+			this_CFD_scan_res=20
+			this_err_CFD_scan_res=0
+			this_optimum_CFD=0
 
 		CFD_scan_res.append(this_CFD_scan_res)
 		err_CFD_scan_res.append(this_err_CFD_scan_res)
@@ -1028,19 +1180,31 @@ def get_scan_results(scan_num,chan,laser):
 
 
 		time_res.append(sigma)
+		time_resCB.append(sigmaCB)
+		time_res_chi2.append(chi2)
+		time_res_chi2CB.append(chi2CB)
 		if scan_num<10000:
 			if (pow(sigma,2)-pow(photek_res,2)) > 0: 
 				time_res_corr.append(pow(pow(sigma,2)-pow(photek_res,2),0.5))
+				time_res_corrCB.append(pow(pow(sigmaCB,2)-pow(photek_res,2),0.5))
+			else:
+				time_res_corr.append(0)
+				time_res_corrCB.append(0)
+				
+			if (pow(this_CFD_scan_res,2)-pow(photek_res,2)) > 0:
 				CFD_scan_res_corr.append(pow(pow(this_CFD_scan_res,2)-pow(photek_res,2),0.5))
-			else: time_res_corr.append(0)
 
 		else: ##test beam data 
 			if (pow(sigma,2)-pow(photek_res_beam,2)) > 0: 
 				time_res_corr.append(pow(pow(sigma,2)-pow(photek_res_beam,2),0.5))
-			else: time_res_corr.append(0)
+				time_res_corrCB.append(pow(pow(sigmaCB,2)-pow(photek_res_beam,2),0.5))
+			else:
+				time_res_corr.append(0)
+				time_res_corrCB.append(0)
 		
 
 		err_time_res.append(sigmaerr)
+		err_time_resCB.append(sigmaerrCB)
 
 		optimum_res_delta.append(sigma - this_CFD_scan_res)
 
@@ -1067,9 +1231,9 @@ def get_scan_results(scan_num,chan,laser):
 
 		risetimes.append(risetime)
 		risetime_errs.append(riseerr)
-		print mean_responses
-		print mean_diode_amps
-		print mean_responses_laser_norm
+		#print mean_responses
+		#print mean_diode_amps
+		#print mean_responses_laser_norm
 		if verbose:
 				print "Scan %i, run %i, voltage %0.2f, raw signal %0.2f, pd %0.2f" % (scan_num,run,biases_meas[i],mean,means_MCP[i])
 		else: 
@@ -1085,106 +1249,119 @@ def get_scan_results(scan_num,chan,laser):
 
 	if(len(mean_responses)!=len(biases)): print "ERROR: length of gains does not match length of biases."
 
+	graph_Dict = {}
+	addGraph(graph_Dict, "graph", len(biases), biases, mean_responses, [0.1 for i in biases], err_responses)
+	addGraph(graph_Dict, "graph_gain", len(biases), biases, gains, [0.1 for i in biases], err_gains)
+	addGraph(graph_Dict, "graph_amp_average", len(biases), biases, mean_amps_averaging, [0.1 for i in biases], err_amps_averaging)
+	addGraph(graph_Dict, "graph_charge_average", len(biases), biases, mean_charge_averaging, [0.1 for i in biases], err_charge_averaging)
+	addGraph(graph_Dict, "graph_amp_average_laser_norm", len(biases), biases, mean_amps_averaging_laser_norm, [0.1 for i in biases], err_amps_averaging_laser_norm)
+	addGraph(graph_Dict, "graph_charge_average_laser_norm", len(biases), biases, mean_charge_averaging_laser_norm, [0.1 for i in biases], err_charge_averaging_laser_norm)
+	addGraph(graph_Dict, "graph_diode_amp_average", len(biases), biases, mean_diode_amps_averaging, [0.1 for i in biases], err_diode_amps_averaging)
+	addGraph(graph_Dict, "graph_charge_amp_ratio", len(biases), biases, mean_charge_amp_ratio, [0.1 for i in biases], mean_charge_amp_ratio_err)
+	addGraph(graph_Dict, "graph_average_amp_vs_amp", len(biases), mean_responses, mean_amps_averaging, err_responses, err_amps_averaging)
+	addGraph(graph_Dict, "graph_diode_average_amp_vs_amp", len(biases), mean_diode_amps, mean_diode_amps_averaging, err_diode_amps, err_diode_amps_averaging)
+	addGraph(graph_Dict, "graph_diode", len(biases), biases, mean_diode_amps, [0.1 for i in biases], err_diode_charge)
+	addGraph(graph_Dict, "graph_diode_charge", len(biases), biases, mean_diode_charge, [0.1 for i in biases], err_diode_charge)
+	addGraph(graph_Dict, "graph_diode_charge_amp_ratio", len(biases), biases, mean_diode_charge_amp_ratio, [0.1 for i in biases], mean_diode_charge_amp_ratio_err)
+	addGraph(graph_Dict, "graph_diode_charge_vs_amp", len(biases), mean_diode_amps, mean_diode_charge, err_diode_amps, err_diode_charge)
+	addGraph(graph_Dict, "graph_amp_laser_norm", len(biases), biases, mean_responses_laser_norm, [0.1 for i in biases], err_responses_laser_norm)
+	addGraph(graph_Dict, "graph_charge_laser_norm", len(biases), biases, mean_charge_laser_norm, [0.1 for i in biases], err_charge_laser_norm)
+	addGraph(graph_Dict, "graph_charge", len(biases), biases, mean_charges, [0.1 for i in biases], err_charges)
+	addGraph(graph_Dict, "graph_charge_transpose", len(biases), mean_charges, biases, err_charges, [0.1 for i in biases])
+	addGraph(graph_Dict, "graph_MCP", len(biases), biases, means_MCP, [0.1 for i in biases], errs_MCP)
+	addGraph(graph_Dict, "graph_lgadbias", len(biases), lgad_biases, mean_responses, [0.1 for i in biases], err_responses)
+	#addGraph(graph_Dict, "graph_current_lgadbias", len(biases), lgad_biases, currents_meas, [0.1 for i in biases], [0.1 for i in biases])
+	addGraph(graph_Dict, "graph_current_lgadbias", len(biases), biases, currents_meas, [0.1 for i in biases], [0.1 for i in biases])
+	addGraph(graph_Dict, "graph_temp", len(biases), biases, temps, [0.1 for i in biases], [0.1 for i in biases])
+	#addGraph(graph_Dict, "graph_temp_bias", len(biases), temps, biases, [0.1 for i in biases], [0.1 for i in biases])
+	addGraph(graph_Dict, "graph_temp_bias", len(biases), mean_charges, temps, err_charges, [0.1 for i in biases])
+	addGraph(graph_Dict, "graph_charge_vs_current", len(biases), currents_meas, mean_charges, [0.1 for i in biases], err_charges)
+	addGraph(graph_Dict, "graph_time_res", len(biases), biases, time_res, [0.1 for i in biases], err_time_res)
+	addGraph(graph_Dict, "graph_time_resCB", len(biases), biases, time_resCB, [0.1 for i in biases], err_time_resCB)
+	addGraph(graph_Dict, "graph_time_res_corr", len(biases), biases, time_res_corr, [0.1 for i in biases], err_time_res)
+	addGraph(graph_Dict, "graph_time_res_corrCB", len(biases), biases, time_res_corrCB, [0.1 for i in biases], err_time_resCB)
+	addGraph(graph_Dict, "graph_time_res_chi2", len(biases), biases, time_res_chi2, [0.1 for i in biases], [0.1 for i in biases])
+	addGraph(graph_Dict, "graph_time_res_chi2CB", len(biases), biases, time_res_chi2CB, [0.1 for i in biases], [0.1 for i in biases])
+	addGraph(graph_Dict, "graph_time_res_cfd_scan", len(biases), biases, CFD_scan_res, [0.1 for i in biases], err_CFD_scan_res)
+	addGraph(graph_Dict, "graph_time_res_cfd_scan_corr", len(biases), biases, CFD_scan_res_corr, [0.1 for i in biases], err_CFD_scan_res)
+	addGraph(graph_Dict, "graph_time_res_cfd_scan_delta", len(biases), biases, optimum_res_delta, [0.1 for i in biases], [0.1 for i in biases])
+	addGraph(graph_Dict, "graph_optimum_CFD", len(biases), biases, optimum_CFD, [0.1 for i in biases], [0.1 for i in biases])
+	addGraph(graph_Dict, "graph_slew_rate", len(biases), biases, slewrates, [0.1 for i in biases], slewrate_errs)
+	addGraph(graph_Dict, "graph_risetime", len(biases), biases, risetimes, [0.1 for i in biases], risetime_errs)
+	addGraph(graph_Dict, "graph_snr", len(biases), biases, snr, [0.1 for i in biases], snr_err)
+	addGraph(graph_Dict, "graph_jitter", len(biases), biases, jitters, [0.1 for i in biases], jitter_errs)
+	addGraph(graph_Dict, "graph_res_vs_snr", len(biases), snr, time_res, snr_err, err_time_res)
+	addGraph(graph_Dict, "graph_res_vs_slew", len(biases), slewrates, time_res_corr, slewrate_errs, err_time_res)
+	addGraph(graph_Dict, "graph_res_vs_mpv", len(biases), mean_responses, time_res_corr, err_responses, err_time_res)
+	addGraph(graph_Dict, "graph_mpv_vs_snr", len(biases), snr, mean_responses, snr_err, err_responses)
+	addGraph(graph_Dict, "graph_risetime_vs_mpv", len(biases), mean_responses, risetimes, err_responses, risetime_errs)
+	addGraph(graph_Dict, "graph_risetime_vs_charge", len(biases), mean_charges, risetimes, err_charges, risetime_errs)
+	addGraph(graph_Dict, "graph_slew_vs_charge", len(biases), mean_charges, slewrates, err_charges, slewrate_errs)
+	addGraph(graph_Dict, "graph_charge_vs_amp", len(biases), mean_responses, mean_charges, err_responses, err_charges)
+	addGraph(graph_Dict, "graph_res_vs_charge", len(biases), mean_charges, time_res, err_charges, err_time_res)
+	addGraph(graph_Dict, "graph_res_corr_vs_charge", len(biases), mean_charges, time_res_corr, err_charges, err_time_res)
 
-	graph = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",mean_responses),array("d",[0.1 for i in biases]),array("d",err_responses))
-	graph_gain = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",gains),array("d",[0.1 for i in biases]),array("d",err_gains))
-	graph_amp_average = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",mean_amps_averaging),array("d",[0.1 for i in biases]),array("d",err_amps_averaging))
-	graph_charge_average = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",mean_charge_averaging),array("d",[0.1 for i in biases]),array("d",err_charge_averaging))
-	graph_amp_average_laser_norm = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",mean_amps_averaging_laser_norm),array("d",[0.1 for i in biases]),array("d",err_amps_averaging_laser_norm))
-	graph_charge_average_laser_norm = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",mean_charge_averaging_laser_norm),array("d",[0.1 for i in biases]),array("d",err_charge_averaging_laser_norm))
-	
-	graph_diode_amp_average = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",mean_diode_amps_averaging),array("d",[0.1 for i in biases]),array("d",err_diode_amps_averaging))
-	graph_charge_amp_ratio = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",mean_charge_amp_ratio),array("d",[0.1 for i in biases]),array("d",mean_charge_amp_ratio_err))
-	graph_average_amp_vs_amp = ROOT.TGraphErrors(len(biases),array("d",mean_responses),array("d",mean_amps_averaging),array("d",err_responses),array("d",err_amps_averaging))
-	graph_diode_average_amp_vs_amp = ROOT.TGraphErrors(len(biases),array("d",mean_diode_amps),array("d",mean_diode_amps_averaging),array("d",err_diode_amps),array("d",err_diode_amps_averaging))
-	 
-	graph_diode= ROOT.TGraphErrors(len(biases),array("d",biases),array("d",mean_diode_amps),array("d",[0.1 for i in biases]),array("d",err_diode_charge))
-	graph_diode_charge= ROOT.TGraphErrors(len(biases),array("d",biases),array("d",mean_diode_charge),array("d",[0.1 for i in biases]),array("d",err_diode_charge))
-	graph_diode_charge_amp_ratio= ROOT.TGraphErrors(len(biases),array("d",biases),array("d",mean_diode_charge_amp_ratio),array("d",[0.1 for i in biases]),array("d",mean_diode_charge_amp_ratio_err))
-	graph_diode_charge_vs_amp = ROOT.TGraphErrors(len(biases),array("d",mean_diode_amps),array("d",mean_diode_charge),array("d",err_diode_amps),array("d",err_diode_charge))
-	graph_amp_laser_norm = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",mean_responses_laser_norm ),array("d",[0.1 for i in biases]),array("d",err_responses_laser_norm))
-	graph_charge_laser_norm = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",mean_charge_laser_norm ),array("d",[0.1 for i in biases]),array("d",err_charge_laser_norm))
-	graph_charge = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",mean_charges),array("d",[0.1 for i in biases]),array("d",err_charges))
-	graph_charge_transpose = ROOT.TGraphErrors(len(biases),array("d",mean_charges),array("d",biases),array("d",err_charges),array("d",[0.1 for i in biases]))
-	graph_MCP= ROOT.TGraphErrors(len(biases),array("d",biases),array("d",means_MCP),array("d",[0.1 for i in biases]),array("d",errs_MCP))
-	graph_lgadbias = ROOT.TGraphErrors(len(biases),array("d",lgad_biases),array("d",mean_responses),array("d",[0.1 for i in biases]),array("d",err_responses))
-	#graph_current_lgadbias = ROOT.TGraphErrors(len(biases),array("d",lgad_biases),array("d",currents_meas),array("d",[0.1 for i in biases]),array("d",[0.1 for i in biases]))
-	graph_current_lgadbias = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",currents_meas),array("d",[0.1 for i in biases]),array("d",[0.1 for i in biases]))
-	graph_temp = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",temps),array("d",[0.1 for i in biases]),array("d",[0.1 for i in biases]))
-	#graph_temp_bias = ROOT.TGraphErrors(len(biases),array("d",temps),array("d",biases),array("d",[0.1 for i in biases]),array("d",[0.1 for i in biases]))
-	graph_temp_bias = ROOT.TGraphErrors(len(biases),array("d",mean_charges),array("d",temps),array("d",err_charges),array("d",[0.1 for i in biases]))
-
-	graph_charge_vs_current = ROOT.TGraphErrors(len(biases),array("d",currents_meas),array("d",mean_charges),array("d",[0.1 for i in biases]),array("d",err_charges))
-
-
-	graph_time_res = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",time_res),array("d",[0.1 for i in biases]),array("d",err_time_res))
-	graph_time_res_corr = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",time_res_corr),array("d",[0.1 for i in biases]),array("d",err_time_res))
-	graph_time_res_cfd_scan = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",CFD_scan_res),array("d",[0.1 for i in biases]),array("d",err_CFD_scan_res))
-	graph_time_res_cfd_scan_corr = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",CFD_scan_res_corr),array("d",[0.1 for i in biases]),array("d",err_CFD_scan_res))
-	graph_time_res_cfd_scan_delta = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",optimum_res_delta),array("d",[0.1 for i in biases]),array("d",[0.1 for i in biases]))
-	graph_optimum_CFD = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",optimum_CFD),array("d",[0.1 for i in biases]),array("d",[0.1 for i in biases]))
-	graph_slew_rate = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",slewrates),array("d",[0.1 for i in biases]),array("d",slewrate_errs))
-	graph_risetime = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",risetimes),array("d",[0.1 for i in biases]),array("d",risetime_errs))
-	
-	graph_snr = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",snr),array("d",[0.1 for i in biases]),array("d",snr_err))
-	graph_jitter = ROOT.TGraphErrors(len(biases),array("d",biases),array("d",jitters),array("d",[0.1 for i in biases]),array("d",jitter_errs))
-	graph_res_vs_snr = ROOT.TGraphErrors(len(biases),array("d",snr),array("d",time_res),array("d",snr_err),array("d",err_time_res))
-	graph_res_vs_slew = ROOT.TGraphErrors(len(biases),array("d",slewrates),array("d",time_res_corr),array("d",slewrate_errs),array("d",err_time_res))
-	graph_res_vs_mpv = ROOT.TGraphErrors(len(biases),array("d",mean_responses),array("d",time_res),array("d",err_responses),array("d",err_time_res))
-	graph_mpv_vs_snr = ROOT.TGraphErrors(len(biases),array("d",snr),array("d",mean_responses),array("d",snr_err),array("d",err_responses))
-	graph_risetime_vs_mpv = ROOT.TGraphErrors(len(biases),array("d",mean_responses),array("d",risetimes),array("d",err_responses),array("d",risetime_errs))
-	graph_risetime_vs_charge = ROOT.TGraphErrors(len(biases),array("d",mean_charges),array("d",risetimes),array("d",err_charges),array("d",risetime_errs))
-	graph_slew_vs_charge = ROOT.TGraphErrors(len(biases),array("d",mean_charges),array("d",slewrates),array("d",err_charges),array("d",slewrate_errs))
-
-	graph_charge_vs_amp = ROOT.TGraphErrors(len(biases),array("d",mean_responses),array("d",mean_charges),array("d",err_responses),array("d",err_charges))
-	graph_res_vs_charge = ROOT.TGraphErrors(len(biases),array("d",mean_charges),array("d",time_res),array("d",err_charges),array("d",err_time_res))
-	graph_res_corr_vs_charge = ROOT.TGraphErrors(len(biases),array("d",mean_charges),array("d",time_res_corr),array("d",err_charges),array("d",err_time_res))
+	#vs run number
+	addGraph(graph_Dict, "graph_charge_vs_runnum", len(biases), [1+i - runs[0] for i in runs], mean_charges, [0.01 for i in biases], err_charges)
+	addGraph(graph_Dict, "graph_res_corr_vs_runnum", len(biases), [1+i - runs[0] for i in runs], time_res_corr, [0.01 for i in biases], err_time_res)
+	addGraph(graph_Dict, "graph_temp_vs_runnum", len(biases), [1+i - runs[0] for i in runs], temps, [0.01 for i in biases], [0.01 for i in biases])
+	addGraph(graph_Dict, "graph_current_vs_runnum", len(biases), [1+i - runs[0] for i in runs], currents_meas, [0.01 for i in biases], [0.01 for i in biases])
 
 
 	## give tgraphs names so they can be saved to preserve python scope for multi-scan overlay 
-	graph.SetName("gr%i_%i"%(scan_num,chan))
-	graph_gain.SetName("gr_gain%i_%i"%(scan_num,chan))
-	graph_amp_average.SetName("gr_amp_average%i_%i"%(scan_num,chan))
-	graph_charge_average.SetName("gr_charge_average%i_%i"%(scan_num,chan))
-	graph_amp_average_laser_norm.SetName("gr_amp_average_laser_norm%i_%i"%(scan_num,chan))
-	graph_charge_average_laser_norm.SetName("gr_charge_average_laser_norm%i_%i"%(scan_num,chan))
-	graph_diode_amp_average.SetName("gr_diode_amp_average%i_%i"%(scan_num,chan))
-	graph_average_amp_vs_amp.SetName("gr_average_amp_vs_amp%i_%i"%(scan_num,chan))
-	graph_diode_average_amp_vs_amp.SetName("gr_diode_average_amp_vs_amp%i_%i"%(scan_num,chan))
-	graph_charge_amp_ratio.SetName("gr_charge_amp_ratio%i_%i"%(scan_num,chan))
-	graph_diode_charge_amp_ratio.SetName("gr_diode_charge_amp_ratio%i_%i"%(scan_num,chan))
-	graph_diode.SetName("gr_diode%i_%i"%(scan_num,chan))
-	graph_diode_charge.SetName("gr_diode_charge%i_%i"%(scan_num,chan))
-	graph_diode_charge_vs_amp.SetName("gr_diode_charge_vs_amp%i_%i"%(scan_num,chan))
-	graph_amp_laser_norm.SetName("gr_amp_laser_norm%i_%i"%(scan_num,chan))
-	graph_charge_laser_norm.SetName("gr_charge_laser_norm%i_%i"%(scan_num,chan))
-	graph_charge.SetName("grcharge%i_%i"%(scan_num,chan))
-	graph_charge_vs_current.SetName("grcharge_vs_current%i_%i"%(scan_num,chan))
-	graph_charge_transpose.SetName("grcharge_tranpose%i_%i"%(scan_num,chan))
-	graph_temp_bias.SetName("grtemp_bias%i_%i"%(scan_num,chan))
-	graph_lgadbias.SetName("grlgad%i_%i"%(scan_num,chan))
-	graph_current_lgadbias.SetName("griv%i_%i"%(scan_num,chan))
-	graph_time_res.SetName("grres%i_%i"%(scan_num,chan))
-	graph_time_res_corr.SetName("grres_corr%i_%i"%(scan_num,chan))
-	graph_time_res_cfd_scan.SetName("grres_cfd_scan%i_%i"%(scan_num,chan))
-	graph_time_res_cfd_scan_corr.SetName("grres_cfd_scan_corr%i_%i"%(scan_num,chan))
-	graph_time_res_cfd_scan_delta.SetName("grres_cfd_scan_delta%i_%i"%(scan_num,chan))
-	graph_optimum_CFD.SetName("groptimum_CFD%i_%i"%(scan_num,chan))
-	graph_slew_rate.SetName("grslew%i_%i"%(scan_num,chan))
-	graph_risetime.SetName("grrise%i_%i"%(scan_num,chan))
-	graph_snr.SetName("grsnr%i_%i"%(scan_num,chan))
-	graph_jitter.SetName("grjitter%i_%i"%(scan_num,chan))
-	graph_res_vs_snr.SetName("grres_vs_snr%i_%i"%(scan_num,chan))
-	graph_res_vs_slew.SetName("grres_vs_slew%i_%i"%(scan_num,chan))
-	graph_res_vs_mpv.SetName("grres_vs_mpv%i_%i"%(scan_num,chan))
-	graph_mpv_vs_snr.SetName("grmpv_vs_snr%i_%i"%(scan_num,chan))
-	graph_risetime_vs_mpv.SetName("grrisetime_vs_mpv%i_%i"%(scan_num,chan))
-	graph_risetime_vs_charge.SetName("grrisetime_vs_charge%i_%i"%(scan_num,chan))
-	graph_slew_vs_charge.SetName("grslew_vs_charge%i_%i"%(scan_num,chan))
+	graph_Dict["graph"].SetName("gr%i_%i"%(scan_num,chan))
+	graph_Dict["graph_gain"].SetName("gr_gain%i_%i"%(scan_num,chan))
+	graph_Dict["graph_amp_average"].SetName("gr_amp_average%i_%i"%(scan_num,chan))
+	graph_Dict["graph_charge_average"].SetName("gr_charge_average%i_%i"%(scan_num,chan))
+	graph_Dict["graph_amp_average_laser_norm"].SetName("gr_amp_average_laser_norm%i_%i"%(scan_num,chan))
+	graph_Dict["graph_charge_average_laser_norm"].SetName("gr_charge_average_laser_norm%i_%i"%(scan_num,chan))
+	graph_Dict["graph_diode_amp_average"].SetName("gr_diode_amp_average%i_%i"%(scan_num,chan))
+	graph_Dict["graph_average_amp_vs_amp"].SetName("gr_average_amp_vs_amp%i_%i"%(scan_num,chan))
+	graph_Dict["graph_diode_average_amp_vs_amp"].SetName("gr_diode_average_amp_vs_amp%i_%i"%(scan_num,chan))
+	graph_Dict["graph_charge_amp_ratio"].SetName("gr_charge_amp_ratio%i_%i"%(scan_num,chan))
+	graph_Dict["graph_diode_charge_amp_ratio"].SetName("gr_diode_charge_amp_ratio%i_%i"%(scan_num,chan))
+	graph_Dict["graph_diode"].SetName("gr_diode%i_%i"%(scan_num,chan))
+	graph_Dict["graph_diode_charge"].SetName("gr_diode_charge%i_%i"%(scan_num,chan))
+	graph_Dict["graph_diode_charge_vs_amp"].SetName("gr_diode_charge_vs_amp%i_%i"%(scan_num,chan))
+	graph_Dict["graph_amp_laser_norm"].SetName("gr_amp_laser_norm%i_%i"%(scan_num,chan))
+	graph_Dict["graph_charge_laser_norm"].SetName("gr_charge_laser_norm%i_%i"%(scan_num,chan))
+	graph_Dict["graph_charge"].SetName("grcharge%i_%i"%(scan_num,chan))
+	graph_Dict["graph_charge_vs_current"].SetName("grcharge_vs_current%i_%i"%(scan_num,chan))
+	graph_Dict["graph_charge_transpose"].SetName("grcharge_tranpose%i_%i"%(scan_num,chan))
+	graph_Dict["graph_temp_bias"].SetName("grtemp_bias%i_%i"%(scan_num,chan))
+	graph_Dict["graph_lgadbias"].SetName("grlgad%i_%i"%(scan_num,chan))
+	graph_Dict["graph_current_lgadbias"].SetName("griv%i_%i"%(scan_num,chan))
+	graph_Dict["graph_time_res"].SetName("grres%i_%i"%(scan_num,chan))
+	graph_Dict["graph_time_resCB"].SetName("grresCB%i_%i"%(scan_num,chan))
+	graph_Dict["graph_time_res_corr"].SetName("grres_corr%i_%i"%(scan_num,chan))
+	graph_Dict["graph_time_res_corrCB"].SetName("grres_corrCB%i_%i"%(scan_num,chan))
+	graph_Dict["graph_time_res_chi2"].SetName("grres_chi2%i_%i"%(scan_num,chan))
+	graph_Dict["graph_time_res_chi2CB"].SetName("grres_chi2CB%i_%i"%(scan_num,chan))
+	graph_Dict["graph_time_res_cfd_scan"].SetName("grres_cfd_scan%i_%i"%(scan_num,chan))
+	graph_Dict["graph_time_res_cfd_scan_corr"].SetName("grres_cfd_scan_corr%i_%i"%(scan_num,chan))
+	graph_Dict["graph_time_res_cfd_scan_delta"].SetName("grres_cfd_scan_delta%i_%i"%(scan_num,chan))
+	graph_Dict["graph_optimum_CFD"].SetName("groptimum_CFD%i_%i"%(scan_num,chan))
+	graph_Dict["graph_slew_rate"].SetName("grslew%i_%i"%(scan_num,chan))
+	graph_Dict["graph_risetime"].SetName("grrise%i_%i"%(scan_num,chan))
+	graph_Dict["graph_snr"].SetName("grsnr%i_%i"%(scan_num,chan))
+	graph_Dict["graph_jitter"].SetName("grjitter%i_%i"%(scan_num,chan))
+	graph_Dict["graph_res_vs_snr"].SetName("grres_vs_snr%i_%i"%(scan_num,chan))
+	graph_Dict["graph_res_vs_slew"].SetName("grres_vs_slew%i_%i"%(scan_num,chan))
+	graph_Dict["graph_res_vs_mpv"].SetName("grres_vs_mpv%i_%i"%(scan_num,chan))
+	graph_Dict["graph_mpv_vs_snr"].SetName("grmpv_vs_snr%i_%i"%(scan_num,chan))
+	graph_Dict["graph_risetime_vs_mpv"].SetName("grrisetime_vs_mpv%i_%i"%(scan_num,chan))
+	graph_Dict["graph_risetime_vs_charge"].SetName("grrisetime_vs_charge%i_%i"%(scan_num,chan))
+	graph_Dict["graph_slew_vs_charge"].SetName("grslew_vs_charge%i_%i"%(scan_num,chan))
+	graph_Dict["graph_charge_vs_amp"].SetName("grcharge_vs_amp%i_%i"%(scan_num,chan))
+	graph_Dict["graph_res_vs_charge"].SetName("grres_vs_charge%i_%i"%(scan_num,chan))
+	graph_Dict["graph_res_corr_vs_charge"].SetName("grres_corr_vs_charge%i_%i"%(scan_num,chan))
+	
+	graph_Dict["graph_res_corr_vs_runnum"].SetName("grres_corr_vs_runnum%i_%i"%(scan_num,chan))
+	graph_Dict["graph_charge_vs_runnum"].SetName("grcharge_vs_runnum%i_%i"%(scan_num,chan))
+	graph_Dict["graph_current_vs_runnum"].SetName("grcurrent_vs_runnum%i_%i"%(scan_num,chan))
+	graph_Dict["graph_temp_vs_runnum"].SetName("grtemp_vs_runnum%i_%i"%(scan_num,chan))
 
-	graph_charge_vs_amp.SetName("grcharge_vs_amp%i_%i"%(scan_num,chan))
-	graph_res_vs_charge.SetName("grres_vs_charge%i_%i"%(scan_num,chan))
-	graph_res_corr_vs_charge.SetName("grres_corr_vs_charge%i_%i"%(scan_num,chan))
+
 
 	##convert rows to columns
 	col_mean_noise = zip(*mean_noise)
@@ -1198,20 +1375,18 @@ def get_scan_results(scan_num,chan,laser):
 	#mgraph.Add(graph_norm)
 
 	#chan=2
-	graph_lgadnoise_vs_bias = ROOT.TGraphErrors(len(biases),array("d",lgad_biases),array("d",col_mean_noise[chan]),array("d",[0.1 for i in biases]),array("d",col_err_noise[chan]))
-	graph_lgadnoise_vs_bias.SetName("grlgadnoise_vs_bias%i_%i"%(scan_num,chan))
+	addGraph(graph_Dict, "graph_lgadnoise_vs_bias", len(biases), lgad_biases, col_mean_noise[chan], [0.1 for i in biases], col_err_noise[chan])
+	graph_Dict["graph_lgadnoise_vs_bias"].SetName("grlgadnoise_vs_bias%i_%i"%(scan_num,chan))
+
+	addGraph(graph_Dict, "graph_lgadnoise_vs_charge", len(biases), mean_charges, col_mean_noise[chan], err_charges, col_err_noise[chan])
+	graph_Dict["graph_lgadnoise_vs_charge"].SetName("grlgadnoise_vs_charge%i_%i"%(scan_num,chan))
+
+	addGraph(graph_Dict, "graph_lgadnoise_vs_current", len(biases), currents_meas, col_mean_noise[chan], [0.1 for i in biases], col_err_noise[chan])
+	graph_Dict["graph_lgadnoise_vs_current"].SetName("grlgadnoise_vs_current%i_%i"%(scan_num,chan))
+
+
+	return graphs_noise, graph_Dict
 	
-	graph_lgadnoise_vs_charge = ROOT.TGraphErrors(len(biases),array("d",mean_charges),array("d",col_mean_noise[chan]),array("d",err_charges),array("d",col_err_noise[chan]))
-	graph_lgadnoise_vs_charge.SetName("grlgadnoise_vs_charge%i_%i"%(scan_num,chan))
-
-	graph_lgadnoise_vs_current = ROOT.TGraphErrors(len(biases),array("d",currents_meas),array("d",col_mean_noise[chan]),array("d",[0.1 for i in biases]),array("d",col_err_noise[chan]))
-	graph_lgadnoise_vs_current.SetName("grlgadnoise_vs_current%i_%i"%(scan_num,chan))
-
-
-
-	return graph,graph_gain,graph_amp_average,graph_charge_average,graph_amp_average_laser_norm,graph_charge_average_laser_norm,graph_diode_amp_average,graph_average_amp_vs_amp,graph_diode_average_amp_vs_amp,graph_charge_amp_ratio,graph_diode_charge_amp_ratio,graph_diode,graph_diode_charge,graph_diode_charge_vs_amp,graph_amp_laser_norm,graph_charge_laser_norm,graph_MCP,graph_temp,graph_temp_bias,graph_lgadbias,graph_current_lgadbias,graphs_noise,graph_time_res,graph_snr,graph_res_vs_snr,graph_res_vs_mpv,graph_mpv_vs_snr,graph_slew_rate,graph_res_vs_slew,graph_risetime,graph_risetime_vs_mpv,graph_lgadnoise_vs_bias,graph_charge,graph_charge_vs_amp,graph_res_vs_charge,graph_res_corr_vs_charge,graph_charge_transpose,graph_risetime_vs_charge,graph_slew_vs_charge,graph_jitter,graph_time_res_corr,graph_time_res_cfd_scan,graph_time_res_cfd_scan_delta,graph_optimum_CFD,graph_time_res_cfd_scan_corr,graph_lgadnoise_vs_charge, graph_lgadnoise_vs_current, graph_charge_vs_current
-	
-
 
 if len(sys.argv) < 2:
     sys.exit('Please provide a series number') 
@@ -1251,66 +1426,22 @@ with open(series_txt_filename) as series_txt_file:
 
 outFile = ROOT.TFile("buffer.root","RECREATE")
 for i,scan_num in enumerate(scan_nums):
-	graph,graph_gain,graph_amp_average,graph_charge_average,graph_amp_average_laser_norm,graph_charge_average_laser_norm,graph_diode_amp_average,graph_average_amp_vs_amp,graph_diode_average_amp_vs_amp,graph_charge_amp_ratio,graph_diode_charge_amp_ratio,graph_diode,graph_diode_charge,graph_diode_charge_vs_amp,graph_amp_laser_norm,graph_charge_laser_norm,graph_MCP,graph_temp,graph_temp_bias,graph_lgadbias,graph_current_lgadbias,graphs_noise,graph_time_res,graph_snr,graph_res_vs_snr,graph_res_vs_mpv,graph_mpv_vs_snr,graph_slew_rate,graph_res_vs_slew,graph_risetime,graph_risetime_vs_mpv, graph_lgadnoise_vs_bias,graph_charge,graph_charge_vs_amp,graph_res_vs_charge,graph_res_corr_vs_charge,graph_charge_transpose,graph_risetime_vs_charge,graph_slew_vs_charge,graph_jitter,graph_time_res_corr,graph_time_res_cfd_scan,graph_time_res_cfd_scan_delta ,graph_optimum_CFD,graph_time_res_cfd_scan_corr,graph_lgadnoise_vs_charge,graph_lgadnoise_vs_current, graph_charge_vs_current = get_scan_results(scan_num,chans[i],isLaserRun[i])
-	graph_lgadbias.Write()
-	graph.Write()
-	graph_gain.Write()
-	graph_amp_average.Write()
-	graph_charge_average.Write()
-	graph_amp_average_laser_norm.Write()
-	graph_charge_average_laser_norm.Write()
-	graph_diode_amp_average.Write()
-	graph_average_amp_vs_amp.Write()
-	graph_diode_average_amp_vs_amp.Write()
+	graphs_noise, graph_Dict = get_scan_results(scan_num,chans[i],isLaserRun[i])
+	for key, graph in graph_Dict.items():
+		graph.Write()
 
-	graph_charge_amp_ratio.Write()
-	graph_diode_charge_amp_ratio.Write()
-	graph_diode.Write()
-	graph_diode_charge.Write()
-	graph_diode_charge_vs_amp.Write()
-	graph_amp_laser_norm.Write()
-	graph_charge_laser_norm.Write()
-	graph_charge.Write()
-	graph_charge_transpose.Write()
-	graph_temp_bias.Write()
-	graph_current_lgadbias.Write()
-	graph_time_res.Write()
-	graph_time_res_corr.Write()
-	graph_snr.Write()
-	graph_jitter.Write()
-	graph_res_vs_snr.Write()
-	graph_res_vs_mpv.Write()
-	graph_mpv_vs_snr.Write()
-	graph_slew_rate.Write()
-	graph_slew_vs_charge.Write()
-	graph_res_vs_slew.Write()
-	graph_risetime.Write()
-	graph_risetime_vs_mpv.Write()
-	graph_risetime_vs_charge.Write()
-	graph_lgadnoise_vs_bias.Write()
-	graph_charge_vs_amp.Write()
-	graph_res_vs_charge.Write()
-	graph_res_corr_vs_charge.Write()
-	graph_time_res_cfd_scan.Write()
-	graph_optimum_CFD.Write()
-	graph_time_res_cfd_scan_delta.Write()
-	graph_time_res_cfd_scan_corr.Write()
-	graph_lgadnoise_vs_charge.Write()
-	graph_lgadnoise_vs_current.Write()
-	graph_charge_vs_current.Write()
-
-	BV_for_charges.append(round(graph_charge_transpose.Eval(charge_thresh),2))
-	BV_for_charges15.append(round(graph_charge_transpose.Eval(15),2))
-	BV_for_charges25.append(round(graph_charge_transpose.Eval(25),2))
-	Temp_for_charges.append(round(graph_temp_bias.Eval(charge_thresh),4))
+	BV_for_charges.append(round(graph_Dict["graph_charge_transpose"].Eval(charge_thresh),2))
+	BV_for_charges15.append(round(graph_Dict["graph_charge_transpose"].Eval(15),2))
+	BV_for_charges25.append(round(graph_Dict["graph_charge_transpose"].Eval(25),2))
+	Temp_for_charges.append(round(graph_Dict["graph_temp_bias"].Eval(charge_thresh),4))
 
 	for graph_noise in graphs_noise: graph_noise.Write()
-	plot_single_scan(scan_num,graph,graph_MCP,graph_temp,graph_lgadbias,graph_current_lgadbias,graph_time_res,names[i],temps[i])
+	plot_single_scan(scan_num,graph_Dict["graph"],graph_Dict["graph_MCP"],graph_Dict["graph_temp"],graph_Dict["graph_lgadbias"],graph_Dict["graph_current_lgadbias"],graph_Dict["graph_time_res"],names[i],temps[i])
 	plot_noise(graphs_noise)
 
 outFile.Save()
 
-for i in range(43):
+for i in range(44+3+4):
 	if not isLaserRun[0] and ((i >=20 and i<=24) or (i>=26 and i<=34)): continue
 	plot_overlay(outFile,names,temps,series_num,i+1)
 
@@ -1322,12 +1453,12 @@ for i in range(len(names)):
 
 outtable_BV.close()
 
-outtable_BV_temp = open("series%s_temp_for_%ifC.txt"%(series_num,charge_thresh),"w")
-for i in range(len(names)):
-	print names[i], "temp to reach %i fC: "%charge_thresh,Temp_for_charges[i]
-	outtable_BV_temp.write(",".join([names[i],str(Temp_for_charges[i])+"\n"]))
+#outtable_BV_temp = open("series%s_temp_for_%ifC.txt"%(series_num,charge_thresh),"w")
+#for i in range(len(names)):
+#	print names[i], "temp to reach %i fC: "%charge_thresh,Temp_for_charges[i]
+#	outtable_BV_temp.write(",".join([names[i],str(Temp_for_charges[i])+"\n"]))
 
-outtable_BV_temp.close()
+#outtable_BV_temp.close()
 
 
 

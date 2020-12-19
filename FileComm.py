@@ -127,8 +127,16 @@ def ReadCompliance():
 
 def Meas(Resource):
     ReadCMD = ':READ?'
-    ReadMeas = Resource.query(ReadCMD)
-    
+    ReadMeas = "-1.0,-1.0"
+    try:
+        ReadMeas = Resource.query(ReadCMD)
+    except:
+        time.sleep(5)
+        try:
+            ReadMeas = Resource.query(ReadCMD)
+        except pyvisa.errors.VisaIOError as e:
+            print "Error: {}".format(e)
+
     VoltageReturned = float(ReadMeas.split(",")[0])
     CurrentReturned = float(ReadMeas.split(",")[1])
 

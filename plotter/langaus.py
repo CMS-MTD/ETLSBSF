@@ -36,7 +36,7 @@ class LanGausFit:
         tf1.SetParNames("LandauWidth","LandauMPV","Normalisation","GaussianSigma")
         tf1.SetParameters(startwidth, startmpv, startnorm, startsigma)
         # run fit
-        histogram.Fit(tf1, "0L", "", xlow, xhigh)
+        histogram.Fit(tf1, "Q0L", "", xlow, xhigh)
         # store the function object and return it
         self._tf1 = tf1
         return tf1

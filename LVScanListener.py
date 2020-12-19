@@ -22,7 +22,8 @@ RampUp(Resource, InitialVoltage, False)
 time.sleep(InitialCurrentSettleTime)
 
 StartRunNumber = -1
-while abs(Voltage) <= abs(FinalVoltage):
+changeVoltage = True
+while abs(Voltage) <= abs(FinalVoltage) and nFinalVoltageRuns>0:
     print '\n*************************'
     print 'Waiting for the green signal from the autopilot\n'
     RunNumber = ReceiveLVGreenSignal(Resource, ScanNumber)
@@ -30,8 +31,15 @@ while abs(Voltage) <= abs(FinalVoltage):
         StartRunNumber = RunNumber
     if RunNumber != 0:
 
-        print 'Changing the Voltage to %f V' % Voltage
-        MeasVoltage, MeasCurrent = SetVoltage(Resource, ScanNumber, Voltage, VoltageSettleTime, False)
+        #if abs(Voltage) <= abs(FinalVoltage):
+        if changeVoltage:
+            print 'Changing the Voltage to %f V' % Voltage
+            MeasVoltage, MeasCurrent = SetVoltage(Resource, ScanNumber, Voltage, VoltageSettleTime, False)
+        else:
+            print "Taking an extra run at {} V".format(round(Voltage,2))
+            print 'Reading the current for extra run'
+            time.sleep(5)
+            measVoltage,MeasCurrent = ReadVoltage(Resource)
     
         if Compliance - MeasCurrent < ComplianceRange :
             HitComplianceTrue()
@@ -42,14 +50,18 @@ while abs(Voltage) <= abs(FinalVoltage):
         ##### Write scan data for this run
         WriteVoltageScanDataFile(ScanNumber, RunNumber, Voltage, MeasVoltage, MeasCurrent, Temp16,Temp20,Temp17,Temp18,Temp19,LaserTune)
         
-        if InitialVoltage != FinalVoltage:
+        #if InitialVoltage != FinalVoltage:
+        if Voltage != FinalVoltage:
             Voltage = Voltage + VoltageStep
             if numberOfOddVoltagesToSkip > 0: 
                 Voltage = Voltage + VoltageStep
                 numberOfOddVoltagesToSkip = numberOfOddVoltagesToSkip - 1
+        else: 
+            nFinalVoltageRuns = nFinalVoltageRuns-1
+            changeVoltage = False
+            
         #if abs(Voltage) > abs(FinalVoltage):
             
-            ## Ryan: I don't see the point of this option and I don't want it to remain for very long at top voltage, and I don't like how the last measurement could happen after a very long delay, depending on user.
             #StopAutopilot = raw_input("This is the last allowed voltage value. Do you want to stop the autopilot after this iteration (y/n) ? ")
             # if StopAutopilot == "y" or StopAutopilot == "Y" : 
             #     os.system("source %s" % StopAutopilotFileName)
@@ -59,6 +71,7 @@ while abs(Voltage) <= abs(FinalVoltage):
            
         print 'The current run number is ', RunNumber
         print '*************************\n'
+
         SendAutopilotGreenSignal()
 
 

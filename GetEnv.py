@@ -9,7 +9,8 @@ import sys
 import glob
 from bisect import bisect_left
 
-labview_unsync_base_path = '/home/daq/LaserScan/e/LabviewDAQData/'
+# labview_unsync_base_path = '/home/daq/LaserScan/e/LabviewDAQData/'
+labview_unsync_base_path = '/home/daq/WindowsMount/'
 
 def greatest_number_less_than_value(seq,value):
 	if bisect_left(seq,value)>0:
