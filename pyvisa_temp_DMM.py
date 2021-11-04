@@ -1,6 +1,7 @@
 import visa
 import time
 import sys
+from datetime import datetime
 
 def getResourceDMM(debug=False):    
     # Setup resource that will talk to DMM
@@ -43,6 +44,7 @@ def queryVal(my_instrument, cmd):
 
 def queryMultiVal(my_instrument, cmd, channels):
     t = round(time.time(), 3)
+    #t = round((datetime.now() - datetime.strptime("2000-01-01 00:00:00", "%Y-%m-%d %H:%M:%S")).total_seconds(), 3)
     vals = []
     for ch, doRead in channels:
         val = 0
@@ -50,9 +52,9 @@ def queryMultiVal(my_instrument, cmd, channels):
             val = queryVal(my_instrument, "{0} (@{1})".format(cmd, ch))
         vals.append(val)
 
-    line = "{:.15f}\t".format(t)
+    line = "{:.13f}\t".format(t)
     for x in vals:
-        line += "{:.15f}\t".format(x)
+        line += "{:.13f}\t".format(x)
         
     return line
 
@@ -69,29 +71,41 @@ def progressbar(it, prefix="", size=60, file=sys.stdout):
     file.write("\n")
     file.flush()
 
+def dewPoint(current=None):
+    tempHigh = 20.0 # degrees C
+    tempLow = -80.0 # degrees C
+    currentHigh = 20.0 # mA 
+    currentLow = 4.0 # mA
+    m = (tempHigh-tempLow)/(currentHigh-currentLow)
+    return m*(current-currentLow) + tempLow
+
 def main():
     print("Start logging temp")
     my_instrument = getResourceDMM()
     print("Connected to multi-meter")
     
     minChannel = 94; maxChannel = 132
+    #minChannel = 111; maxChannel = 113
     readChannels = [112]
-    entriesPerLogFile = 100
+    entriesPerLogFile = 1000
     allChannels = list((channel,True if channel in readChannels else False) for channel in range(minChannel,maxChannel+1))
-    
+    f=None
     try:
         while True:
             fileName = "tempLogs/lab_meas_unsync_{:.3f}.txt".format(time.time())
+            #fileName = "tempLogs/lab_meas_unsync_{:.3f}.txt".format((datetime.now() - datetime.strptime("2000-01-01 00:00:00", "%Y-%m-%d %H:%M:%S")).total_seconds())
             print("-"*50)
             print("Sending measured temperature to: {}".format(fileName))
-            f = open(fileName,"w")
+    
     
             lineCounter = 0
             for lineCounter in progressbar(range(entriesPerLogFile), "  Filling log file: ", 40):
                 line = queryMultiVal(my_instrument, 'MEAS:TEMP?', allChannels)
+                f = open(fileName,"a")
                 f.write(line+"\n")
+                f.close()
                 time.sleep(1)
-            f.close()
+     
     except KeyboardInterrupt:
         print("\nStopped the logging of temperature")
         if f:

@@ -28,15 +28,15 @@ RunFilenameManual = "/home/daq/otsdaq/srcs/otsdaq_cmstiming/Data_2018_09_Septemb
 
 laserMode=False
 ### Voltage Scan Parameters ###
-InitialVoltage = -300
-FinalVoltage = -520 #-650
-numberOfOddVoltagesToSkip = 5 ### Skip every other bias point at the beginning of the scan, this many times.
+InitialVoltage = -185
+FinalVoltage = -225 #-650
+numberOfOddVoltagesToSkip = 0 ### Skip every other bias point at the beginning of the scan, this many times.
 nFinalVoltageRuns = 1 ##Number of runs at final voltage default should be one.
-VoltageStep = -10
+VoltageStep = -5
 VoltageSettleTime = 300 #previously 10
 MeasTimeInterval = 5 #Give an int, should be less than voltage settle time
-InitialCurrentSettleTime = 4*60*60#1500#1000 #5000 # time before first run [s]
-Compliance = 75e-06 # 2e-06#18e-06
+InitialCurrentSettleTime = 300#2*60*60#1500#1000 #5000 # time before first run [s]
+Compliance = 65e-06 # 2e-06#18e-06
 CurrRange = 1e-04#1e-05 #e-06 = microamps
 ComplianceRange = 0.5e-06 #if the current reaches within this window around the compliance current, a warning will be sent to your email
 VoltageRampDownSettleTime = 1
@@ -54,5 +54,3 @@ ComplianceFileName = '%sComplianceFile.txt' % SBSFBaseDir
 if FinalVoltage > 0: FinalVoltage = -1 * FinalVoltage
 if InitialVoltage > 0: InitialVoltage = -1 * InitialVoltage
 if VoltageStep > 0: VoltageStep = -1 * VoltageStep
-
-

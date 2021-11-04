@@ -6,7 +6,7 @@ horizontalWindow = 50 #ns
 
 #Hard Code these:
 trigCh = "4" 
-trig = -0.01 #-0.01 #V
+trig = -0.01#-0.01 #-0.01 #V
 
 vScale1 = 0.05
 vScale2 = 0.05 

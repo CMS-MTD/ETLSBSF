@@ -9,8 +9,9 @@ import sys
 import glob
 from bisect import bisect_left
 
-# labview_unsync_base_path = '/home/daq/LaserScan/e/LabviewDAQData/'
-labview_unsync_base_path = '/home/daq/WindowsMount/'
+#labview_unsync_base_path = '/home/daq/LaserScan/e/LabviewDAQData/'
+#labview_unsync_base_path = '/home/daq/WindowsMount/'
+labview_unsync_base_path = '/home/daq/BiasScan/ETLSBSF/tempLogs/'
 
 def greatest_number_less_than_value(seq,value):
 	if bisect_left(seq,value)>0:
@@ -29,12 +30,14 @@ def GetEnvMeas(timestamp):
 		exact_labview_file = greatest_number_less_than_value(labview_file_list, timestamp)
 		index_labview_file = labview_file_list.index(exact_labview_file)
 		labview_file_name = labview_unsync_base_path + "/lab_meas_unsync_%.3f.txt" % labview_file_list[index_labview_file]
-		all_labview_array = np.array(np.loadtxt(labview_file_name, delimiter='\t', unpack=False))
+		#all_labview_array = np.array(np.loadtxt(labview_file_name, delimiter='\t', unpack=False))
+		all_labview_array = np.array(np.loadtxt(labview_file_name, unpack=False))
 
 		if all_labview_array.size == 0:
 			index_labview_file = index_labview_file - 1
 			labview_file_name = labview_unsync_base_path + "/lab_meas_unsync_%.3f.txt" % labview_file_list[index_labview_file]
-			all_labview_array = np.array(np.loadtxt(labview_file_name, delimiter='\t', unpack=False))
+			#all_labview_array = np.array(np.loadtxt(labview_file_name, delimiter='\t', unpack=False))
+			all_labview_array = np.array(np.loadtxt(labview_file_name, unpack=False))
 
 		if all_labview_array.size != 0:
 		

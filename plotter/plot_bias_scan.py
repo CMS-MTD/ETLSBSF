@@ -27,10 +27,10 @@ three = ROOT.TColor(2003,0.086,0.404,0.576)
 four =ROOT.TColor(2004,0.071,0.694,0.18)
 five =ROOT.TColor(2005,0.388,0.098,0.608)
 six=ROOT.TColor(2006,0.906,0.878,0.094)
-colors = [1,2001,2002,2003,2004,2005,2006,6,2,3,4,6,7,5,1,8,9,29,38,46,1,2001,2002,2003,2004,2005,2006]
+colors = [1,2001,2002,2003,2004,2005,2006,6,2,3,4,6,7,5,1,8,9,29,38,46,1,2001,2002,2003,2004,2005,2006,6,2,3,4,6,7,5,1,8,9,29,38,46,1,1,2001,2002,2003,2004,2005,2006,6,2,3,4,6,7,5,1,8,9,29,38,46,]
 
 verbose = True
-charge_thresh = 15 #fC
+charge_thresh = 10 #fC
 photek_res = 15 #ps for beta
 photek_res_beam = 9 #ps
 diodeTarget = 41. #mV
@@ -43,10 +43,14 @@ def get_extra_cut(run,ch):
 	if run>=152852 and run<= 152859: ## crosstalk in 3rd gen sergey board.
 		if ch==2: extra_cut="&& amp[2]>amp[1]"
 		elif ch==1: extra_cut="&& amp[1]>amp[2]"
+
+	if run>=153504 and run<=153556:
+		extra_cut="&& amp[2]>amp[1] && amp[2]>amp[0]"
+
 	return extra_cut
 
 
-def get_min_amp(run):
+def get_min_amp(run,ch):
 	minAmp =15
 	if run==151172 or run==151173: minAmp = 40
 	if run>151244 and run <=151250: minAmp = 40
@@ -87,7 +91,32 @@ def get_min_amp(run):
 	if run>=153010 and run<=153021: minAmp=45
 	if run>=153034 and run<=153037: minAmp=50
 	if run>=153038 and run<=153039: minAmp=90
+	if run>=153490 and run <=153491: minAmp = 40
+	if run>=153492 and run <=153493: minAmp = 65
+	if run>=153499 and run <=153500: minAmp = 40
+	if run>=153501 and run <=153502: minAmp = 65
+	if run>=153504 and run<=153507: minAmp=30
+	if run>=153508 and run<=153509: minAmp=50
+	if run>=153510 and run<=153518: minAmp=30
+	if run>=153519 and run<=153522: minAmp=70
+	if run>=153533 and run<=153537: minAmp=40
+	if run>=153538 and run<=153544: minAmp=60
+	if run>=153552 and run<=153555: minAmp=50
+	if run>=153556 and run<=153556: minAmp=70
+	if run>=153323 and run<=153325: minAmp=30
+	if run>=153440 and run<=153445: minAmp=50
+	if run>=153261 and run<=153266: minAmp=50
+	if run>=153283 and run<=153289: minAmp=50
 
+	if run>=36280 and run<=36289: minAmp=30
+	if run>=36210 and run<=36219: minAmp=25
+	if run>=36520 and run<=36529: minAmp=30
+	if run==38352 and ch==0: minAmp=50
+	if run==38352 and ch==1: minAmp=30
+	if run==39510 or run==43150 or run==44070: minAmp=70
+	if run==44100: minAmp=100
+	if run==44070 and ch==0:minAmp=100
+	if run>=153302 and run<=153306: minAmp=50
 	return minAmp
 
 def plot_single_scan(scan_num,graph,graph_MCP,graph_temp,graph_lgadbias,graph_current_lgadbias, graph_time_res,name,temp):
@@ -423,8 +452,11 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 		showtemp=False
 	if "temp" in series_num: showtemp=True
 	mgraph = ROOT.TMultiGraph()
-	if series_num=="HPK2_8e14_1p5e15":
-		leg = ROOT.TLegend(0.2,0.7,0.83,0.89)
+	if "HPK2_8e14_1p5e15" in series_num or "HPK2_repro" in series_num:
+		if "split34" not in series_num: leg = ROOT.TLegend(0.2,0.7,0.83,0.89)
+		else: leg = ROOT.TLegend(0.2,0.78,0.83,0.89)
+	if "HPK2_split" or "FBK_mortality" in series_num:
+		leg = ROOT.TLegend(0.15,0.7,0.89,0.89)
 
 	elif( plottype == 1 or plottype== 9 or plottype == 14 or plottype==19 or plottype==22 or plottype==24 or plottype==25 or plottype==35 or plottype==39 or plottype==13 or plottype==41 or plottype==3 or plottype==38 or plottype==42 or plottype==43) and series_num!="7":
 		if (plottype==1 or plottype==9 or plottype==14) and series_num=="HPK2_8e14": leg = ROOT.TLegend(0.41,0.62,0.63,0.86)
@@ -450,17 +482,19 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 
 	if not showtemp: 
 		if series_num=="CMS" or series_num=="CMSATLAS": leg.SetNColumns(3)
-		if series_num=="HPK2_8e14_1p5e15": leg.SetNColumns(3)
+		if "HPK2_8e14_1p5e15" in series_num or "HPK2_repro" in series_num: leg.SetNColumns(3)
 		if series_num=="ATLAS": leg.SetNColumns(2)
+		if "HPK2_split" in series_num: leg.SetNColumns(2)
+		if "FBK_mortality" in series_num: leg.SetNColumns(2)
 		#if series_num=="HPK2_8e14": leg.SetNColumns(2)
-
+	n_legend_entries=0
 	for i,scan in enumerate(scan_nums):
 		#print filename+str(scan)+"_"+str(chans[i])
 		#if plottype!=13:
 		graph = outFile.Get(filename+str(scan)+"_"+str(chans[i]))
 		#else: graph = outFile.Get(filename+str(scan))
 	 	tb = scan==1
-	 	
+	 	cosmetic_tgraph(graph,i,tb)
 	 	if "HPK2_warm" in series_num:
 	 		if i < 3: cosmetic_tgraph(graph,i,tb)
 	 		else: 
@@ -471,7 +505,7 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 	 		else: 
 	 			cosmetic_tgraph(graph,i,tb)
 	 			graph.SetMarkerStyle(24)
-	 	if "HPK2_8e14_1p5e15" in series_num:
+	 	if "HPK2_8e14_1p5e15" in series_num or "HPK2_repro" in series_num:
 	 		i_color = 0
 	 		if "Split 2" in names[i]: i_color=1
 	 		if "Split 3" in names[i]: i_color=2
@@ -484,16 +518,21 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 	 		cosmetic_tgraph(graph,i_color,tb)
 	 		graph.SetMarkerStyle(i_marker)
 
-	 	elif "TB" in series_num or "temp" in series_num or "Feb" in series_num or "W2" in series_num or "Sergey" in series_num or series_num=="2" or "Laser" in series_num or "HPK2" in series_num: cosmetic_tgraph(graph,i,tb)
-	 	else: cosmetic_tgraph_organized(graph,names[i],tb)
+	 	#elif "TB" in series_num or "temp" in series_num or "Feb" in series_num or "W2" in series_num or "Sergey" in series_num or series_num=="2" or "Laser" in series_num or "HPK2" in series_num: cosmetic_tgraph(graph,i,tb)
+		# cosmetic_tgraph(graph,i,tb) #### better default.
+	 	#else: cosmetic_tgraph_organized(graph,names[i],tb)
 		mgraph.Add(graph)
+		
+		if "repro" in series_num and n_legend_entries >= 12: continue
+		if "split34" in series_num and n_legend_entries >=6: continue
 		if series_num=="CMSATLAS" and "ATLAS" in names[i]: continue
 		if showtemp:
 		 	leg.AddEntry(graph, "%s, %i C" %(names[i].replace("(chan0)",""),temps[i]),"EP")
 		elif showCMS:
-			leg.AddEntry(graph, "%s" %(names[i]),"EP")
+			leg.AddEntry(graph, "%s" %(names[i].replace(" 8e14",", 8e14").replace(" 1.5e15",", 1.5e15")),"EP")
 		else: 
 			leg.AddEntry(graph, "%s" %(names[i].replace("CMS ","").replace("ATLAS ","").replace("MW","metal")),"EP")
+		n_legend_entries=n_legend_entries+1
 
 
 	mgraph.SetTitle("; %s; %s"%(x_axis,y_axis))
@@ -504,10 +543,16 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 		if plottype!=51: mgraph.GetYaxis().SetRangeUser(0.7*currentymin, 1.35*currentymax)
 		else: mgraph.GetYaxis().SetRangeUser(1.3*currentymin, 0.7*currentymax) ## negative
 
-	if series_num=="HPK2_8e14_1p5e15":
+	if "HPK2_8e14_1p5e15" in series_num or "HPK2_repro" in series_num:
 		currentymin = mgraph.GetYaxis().GetXmin()
 		currentymax = mgraph.GetYaxis().GetXmax()
 		mgraph.GetYaxis().SetRangeUser(currentymin, 1.35*currentymax)
+	
+	if "HPK2_split" in series_num and plottype==14: 
+		mgraph.GetYaxis().SetRangeUser(0, 35.)
+
+	if "FBK_mortality" in series_num and plottype==14: 
+		mgraph.GetYaxis().SetRangeUser(0, 30.)
 
 	if series_num=="HPK2_8e14_temp":
 		currentymin = mgraph.GetYaxis().GetXmin()
@@ -529,6 +574,8 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 		mgraph.GetXaxis().SetLimits(currentmin-50,currentmax)
 		#mgraph.GetYaxis().SetRangeUser(5,42)
 	#if plottype==3: mgraph.SetTitle("; Bias voltage [V]; Current [100 nA]")
+	if "HPK2_split" in series_num and plottype==14:
+		mgraph.GetXaxis().SetLimits(270,770)
 	if x_axis == "Bias voltage [V]" or "current" in x_axis: mgraph.Draw("AELP")
 	else: mgraph.Draw("AEP")
 	if(len(scan_nums)>0): leg.Draw()
@@ -644,6 +691,26 @@ def get_time_res_channel(tree,ch,run=-1):
 		mint = 3.5e-9 
 		maxt = 4.5e-9
 
+	if run>=153485 and run<=153503:
+		mint = 3.3e-9
+		maxt = 4.9e-9
+	
+	if run>=153504 and run<=153556:
+		mint=2e-9
+		maxt=3e-9
+
+	if run>=153579 and run<=153618:
+		mint=0.5e-9
+		maxt=1.5e-9
+
+	if run>=826 and run<=840:
+		mint=-0.3e-9
+		maxt=0.7e-9
+
+	if run>=153621 and run<=153630:
+		mint=-0.3e-9
+		maxt=0.7e-9
+
 	hist = ROOT.TH1D("h","",70,mint,maxt)
 	
 	photek_thresh = 15
@@ -659,7 +726,7 @@ def get_time_res_channel(tree,ch,run=-1):
 	# if run < 152719,152731,
 	CFD = 15
 	extra_cut = get_extra_cut(run,ch)
-	minAmp = get_min_amp(run)
+	minAmp = get_min_amp(run,ch)
 	if run >=152719 and run <= 152731: CFD = 30
 	tree.Project("h","LP2_%i[%i]-LP2_20[3]"%(CFD,ch),"amp[%i]>%i && amp[%i]<360 && amp[3]>%i && amp[3]<%i && LP2_20[3]!=0 && LP2_20[%i]!=0 %s"%(ch,minAmp,ch,photek_thresh,photek_max,ch,extra_cut))	
 	f1 = ROOT.TF1("f1","gaus",5.8e-9,6.8e-9)
@@ -680,7 +747,10 @@ def get_time_res_channel(tree,ch,run=-1):
 		if ch==2: c.Print("plots/runs/Run%i_time.pdf"%run)
 		else: c.Print("plots/runs/Run%i_ch%i_time.pdf"%(run,ch))
 	#print 'Run NUmber %d,  %f, %f ' %(run,1e12*f1.GetParameter(2),1e12*f1.GetParError(2))
-	CBerror = 0.0 if f2.GetParError(3) / f2.GetParameter(3) > 0.1 else f2.GetParError(3)
+	if f2.GetParameter(3) !=0:
+		CBerror = 0.0 if f2.GetParError(3) / f2.GetParameter(3) > 0.1 else f2.GetParError(3)
+
+	else: CBerror=0.0
 	#print '\033[0;31m Run NUmber %d,  %f, %f \033[0m' %(run,1e12*f2.GetParameter(3),1e12*CBerror)
 	return 1e12*f1.GetParameter(2),1e12*f1.GetParError(2),f1.GetChisquare(), 1e12*f2.GetParameter(3),1e12*CBerror,f2.GetChisquare()
 
@@ -708,6 +778,10 @@ def get_optimum_timeres_channel(tree,ch,run=-1):
 		mint = 3.5e-9 
 		maxt = 4.5e-9
 	
+	if run>=153504 and run<=153556:
+		mint=2e-9
+		maxt=3e-9
+
 	photek_thresh = 15
 	photek_max = 200
 	if run>=2022 and run<= 2028: photek_thresh=50
@@ -720,7 +794,7 @@ def get_optimum_timeres_channel(tree,ch,run=-1):
 
 
 
-	minAmp = get_min_amp(run)
+	minAmp = get_min_amp(run,ch)
 	extra_cut = get_extra_cut(run,ch)
 
 	CFD_list = [5,10,15,20,25,30,35,40,50,60]
@@ -762,7 +836,7 @@ def get_optimum_timeres_channel(tree,ch,run=-1):
 
 def get_slew_rate_channel(tree,ch,run=-1):
 	hist = ROOT.TH1D("h","",60,0,600e9)
-	minAmp = get_min_amp(run)
+	minAmp = get_min_amp(run,ch)
 	extra_cut = get_extra_cut(run,ch)
 
 	tree.Project("h","abs(risetime[%i])"%ch,"amp[%i]>%i %s"%(ch,minAmp,extra_cut))	### mV/ s
@@ -777,7 +851,7 @@ def get_slew_rate_channel(tree,ch,run=-1):
 
 def get_risetime_channel(tree,ch,run=-1):
 	hist = ROOT.TH1D("h","",60,100,1200)
-	minAmp = get_min_amp(run)
+	minAmp = get_min_amp(run,ch)
 	extra_cut = get_extra_cut(run,ch)
 
 	#10 to 90 risetime
@@ -837,7 +911,7 @@ def get_mean_response_channel(tree,ch,run=-1,laser=False):
 	hist = ROOT.TH1D("h","",50,0,400)
 	if run>=152104 and run<=152108: hist = ROOT.TH1D("h","",50,2,710)
 
-	minAmp = get_min_amp(run)
+	minAmp = get_min_amp(run,ch)
 	extra_cut = get_extra_cut(run,ch)
 
 	if laser and ch==1: 
@@ -875,7 +949,7 @@ def get_mean_response_channel(tree,ch,run=-1,laser=False):
 
 def get_charge_channel(tree,ch,run=-1,laser=False):
 	histname = "h%i"%run
-	minAmp = get_min_amp(run)
+	minAmp = get_min_amp(run,ch)
 	extra_cut = get_extra_cut(run,ch)
 	if run >= 151357 and run<=151374: 
 		hist = ROOT.TH1D(histname,"",40,1,30)
@@ -1193,6 +1267,9 @@ def get_scan_results(scan_num,chan,laser):
 				
 			if (pow(this_CFD_scan_res,2)-pow(photek_res,2)) > 0:
 				CFD_scan_res_corr.append(pow(pow(this_CFD_scan_res,2)-pow(photek_res,2),0.5))
+			else:
+				CFD_scan_res_corr.append(0)
+
 
 		else: ##test beam data 
 			if (pow(sigma,2)-pow(photek_res_beam,2)) > 0: 
@@ -1201,7 +1278,12 @@ def get_scan_results(scan_num,chan,laser):
 			else:
 				time_res_corr.append(0)
 				time_res_corrCB.append(0)
-		
+	
+			if (pow(this_CFD_scan_res,2)-pow(photek_res,2)) > 0:
+				CFD_scan_res_corr.append(pow(pow(this_CFD_scan_res,2)-pow(photek_res,2),0.5))
+			else:
+				CFD_scan_res_corr.append(0)
+
 
 		err_time_res.append(sigmaerr)
 		err_time_resCB.append(sigmaerrCB)
@@ -1302,10 +1384,16 @@ def get_scan_results(scan_num,chan,laser):
 	addGraph(graph_Dict, "graph_res_corr_vs_charge", len(biases), mean_charges, time_res_corr, err_charges, err_time_res)
 
 	#vs run number
-	addGraph(graph_Dict, "graph_charge_vs_runnum", len(biases), [1+i - runs[0] for i in runs], mean_charges, [0.01 for i in biases], err_charges)
-	addGraph(graph_Dict, "graph_res_corr_vs_runnum", len(biases), [1+i - runs[0] for i in runs], time_res_corr, [0.01 for i in biases], err_time_res)
-	addGraph(graph_Dict, "graph_temp_vs_runnum", len(biases), [1+i - runs[0] for i in runs], temps, [0.01 for i in biases], [0.01 for i in biases])
-	addGraph(graph_Dict, "graph_current_vs_runnum", len(biases), [1+i - runs[0] for i in runs], currents_meas, [0.01 for i in biases], [0.01 for i in biases])
+	if type(runs[0]) is not list:
+		addGraph(graph_Dict, "graph_charge_vs_runnum", len(biases), [1+i - runs[0] for i in runs], mean_charges, [0.01 for i in biases], err_charges)
+		addGraph(graph_Dict, "graph_res_corr_vs_runnum", len(biases), [1+i - runs[0] for i in runs], time_res_corr, [0.01 for i in biases], err_time_res)
+		addGraph(graph_Dict, "graph_temp_vs_runnum", len(biases), [1+i - runs[0] for i in runs], temps, [0.01 for i in biases], [0.01 for i in biases])
+		addGraph(graph_Dict, "graph_current_vs_runnum", len(biases), [1+i - runs[0] for i in runs], currents_meas, [0.01 for i in biases], [0.01 for i in biases])
+	else:
+		addGraph(graph_Dict, "graph_charge_vs_runnum", len(biases), [1+i[0] - runs[0][0] for i in runs], mean_charges, [0.01 for i in biases], err_charges)
+		addGraph(graph_Dict, "graph_res_corr_vs_runnum", len(biases), [1+i[0] - runs[0][0] for i in runs], time_res_corr, [0.01 for i in biases], err_time_res)
+		addGraph(graph_Dict, "graph_temp_vs_runnum", len(biases), [1+i[0] - runs[0][0] for i in runs], temps, [0.01 for i in biases], [0.01 for i in biases])
+		addGraph(graph_Dict, "graph_current_vs_runnum", len(biases), [1+i[0] - runs[0][0] for i in runs], currents_meas, [0.01 for i in biases], [0.01 for i in biases])
 
 
 	## give tgraphs names so they can be saved to preserve python scope for multi-scan overlay 
