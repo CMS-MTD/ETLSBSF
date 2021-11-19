@@ -25,13 +25,21 @@ if laserMode:
 	vScale3 = 0.2
 	timeoffset=55
 
-
-
+LecroyMode = True
+if LecroyMode:
+	timeoffset=-32
+	sampleRate=10 #probably doesn't work in script, make sure is correct manually
+	trigCh="C4"
+	trig=-0.01
 
 RunNumber = -1
 
+
 ScopeControlDir =  "/home/daq/ETL_Agilent_MSO-X-92004A/"
-AutoPilotStatusFile = '%sAcquisition/ScopeStatus.txt' % ScopeControlDir
+# AutoPilotStatusFile = '%sAcquisition/ScopeStatus.txt' % ScopeControlDir
+if LecroyMode:
+
+	ScopeControlDir = "/home/daq/LecroyControl/"
 
 def ScopeAcquisition(RunNumber, NumEvents):
 	if RunNumber == -1: 
