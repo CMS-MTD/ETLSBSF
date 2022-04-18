@@ -37,6 +37,7 @@ diodeTarget = 41. #mV
 PiNCharge = 0.36 #fC
 doAverage=False
 doCFDScan=False
+n_channels=8
 
 def get_extra_cut(run,ch):
 	extra_cut = ""
@@ -117,6 +118,7 @@ def get_min_amp(run,ch):
 	if run==44100: minAmp=100
 	if run==44070 and ch==0:minAmp=100
 	if run>=153302 and run<=153306: minAmp=50
+	if run>=50000 and run<60000: minAmp=50
 	return minAmp
 
 def plot_single_scan(scan_num,graph,graph_MCP,graph_temp,graph_lgadbias,graph_current_lgadbias, graph_time_res,name,temp):
@@ -711,10 +713,15 @@ def get_time_res_channel(tree,ch,run=-1):
 		mint=-0.3e-9
 		maxt=0.7e-9
 
+	if run>50000 and run<70000:
+		mint=1.5e-9
+		maxt=3.0e-9
+
 	hist = ROOT.TH1D("h","",70,mint,maxt)
 	
 	photek_thresh = 15
 	photek_max = 200
+	photek_chan=3
 	if run>=2022 and run<= 2028: photek_thresh=50
 	if run>27000 and run<30000:
 		photek_thresh =50
@@ -723,12 +730,17 @@ def get_time_res_channel(tree,ch,run=-1):
 		photek_thresh =60
 		photek_max = 120
 
+	if run>50000 and run<70000:
+		photek_thresh =200
+		photek_max = 350
+		photek_chan=7
+
 	# if run < 152719,152731,
 	CFD = 15
 	extra_cut = get_extra_cut(run,ch)
 	minAmp = get_min_amp(run,ch)
 	if run >=152719 and run <= 152731: CFD = 30
-	tree.Project("h","LP2_%i[%i]-LP2_20[3]"%(CFD,ch),"amp[%i]>%i && amp[%i]<360 && amp[3]>%i && amp[3]<%i && LP2_20[3]!=0 && LP2_20[%i]!=0 %s"%(ch,minAmp,ch,photek_thresh,photek_max,ch,extra_cut))	
+	tree.Project("h","LP2_%i[%i]-LP2_20[%i]"%(CFD,ch,photek_chan),"amp[%i]>%i && amp[%i]<360 && amp[%i]>%i && amp[%i]<%i && LP2_20[%i]!=0 && LP2_20[%i]!=0 %s"%(ch,minAmp,ch,photek_chan,photek_thresh,photek_chan,photek_max,photek_chan,ch,extra_cut))	
 	f1 = ROOT.TF1("f1","gaus",5.8e-9,6.8e-9)
 	hist.Fit(f1,"Q")
 	st1 = copy.deepcopy(getStats(hist)) #Need to deep copy the first stats because root will return a pointer that is overwritten during the next fit
@@ -909,6 +921,8 @@ def get_mean_amp_charge_averaging(tree,ch,run=-1,laser=False):
 
 def get_mean_response_channel(tree,ch,run=-1,laser=False):
 	hist = ROOT.TH1D("h","",50,0,400)
+	photek_chan=3
+	if run>50000 and run<70000: photek_chan=7
 	if run>=152104 and run<=152108: hist = ROOT.TH1D("h","",50,2,710)
 
 	minAmp = get_min_amp(run,ch)
@@ -918,8 +932,9 @@ def get_mean_response_channel(tree,ch,run=-1,laser=False):
 		minAmp=0.5
 		hist = ROOT.TH1D("h","",350,0,350)
 
-	if not laser: selection = "amp[%i]>%f&&amp[3]>10 %s"%(ch,minAmp,extra_cut)
+	if not laser: selection = "amp[%i]>%f&&amp[%i]>10 %s"%(ch,minAmp,photek_chan,extra_cut)
 	else: selection =  "amp[%i]>%f"%(ch,minAmp)
+	print "get_mean_response selection: ",selection
 	hist.StatOverflows(True)
 	tree.Project("h","amp[%i]"%ch,selection)
 	mean=0.
@@ -951,6 +966,9 @@ def get_charge_channel(tree,ch,run=-1,laser=False):
 	histname = "h%i"%run
 	minAmp = get_min_amp(run,ch)
 	extra_cut = get_extra_cut(run,ch)
+	photek_chan=3
+	if run>50000 and run<70000: photek_chan=7
+
 	if run >= 151357 and run<=151374: 
 		hist = ROOT.TH1D(histname,"",40,1,30)
 		minAmp=10.
@@ -967,7 +985,7 @@ def get_charge_channel(tree,ch,run=-1,laser=False):
 
 	hist.StatOverflows(True)
 
-	if not laser: selection = "amp[%i]>%f&&amp[3]>10 %s"%(ch,minAmp,extra_cut)
+	if not laser: selection = "amp[%i]>%f&&amp[%i]>10 %s"%(ch,minAmp,photek_chan,extra_cut)
 	else: selection =  "amp[%i]>%f"%(ch,minAmp)
 	print "Selection is ",selection
 	tree.Project(histname,"-1000*integral[%i]*1e9*50/4700"%ch,selection)
@@ -1010,7 +1028,7 @@ def get_mean_baseline_RMS_channel(tree,ch):
 def get_mean_baseline_RMS(tree):
 	means_this_run=[]
 	errs_this_run=[]
-	for i in range(4):
+	for i in range(n_channels):
 		mean,err = get_mean_baseline_RMS_channel(tree,i)
 		means_this_run.append(mean)
 		errs_this_run.append(err)
@@ -1020,7 +1038,7 @@ def get_mean_baseline_RMS(tree):
 def get_mean_response(tree):
 	means_this_run=[]
 	errs_this_run=[]
-	for i in range(4):
+	for i in range(n_channels):
 		mean,err = get_mean_response_channel(tree,i)
 		means_this_run.append(mean)
 		errs_this_run.append(err)
@@ -1118,7 +1136,7 @@ def get_scan_results(scan_num,chan,laser):
 	jitters=[]
 	jitter_errs=[]
 
-	scan_txt_filename = "/home/daq/BiasScan/ETLSBSF/VoltageScanDataRegistry/scan%i.txt" % scan_num
+	scan_txt_filename = "../VoltageScanDataRegistry/scan%i.txt" % scan_num
 	with open(scan_txt_filename) as scan_txt_file:
 		for line in scan_txt_file:
 			if line[:1] == "#": continue
@@ -1154,7 +1172,8 @@ def get_scan_results(scan_num,chan,laser):
 		#open root file/tree
 		tree = ROOT.TChain("pulse")
 		if type(run) is list:
-			for r in run: tree.Add("/home/daq/ScopeData/Reco/run_scope%i.root" % r)
+			# for r in run: tree.Add("/home/daq/ScopeData/Reco/run_scope%i.root" % r)
+			for r in run: tree.Add("root://cmseos.fnal.gov//store/group/cmstestbeam/SensorBeam2022/LecroyScope/RecoData/TimingDAQRECO/RecoWithTracks/v1/run%i_info.root" % r)
 			run = run[0]
 		else:
 			tree.Add("/home/daq/ScopeData/Reco/run_scope%i.root" % run)
@@ -1293,8 +1312,12 @@ def get_scan_results(scan_num,chan,laser):
 		mean_noise.append(noise_means)
 		err_mean_noise.append(noise_errs)
 
-		snr_lgad_channel = mean/noise_means[chan]
-		snr_err_lgad_channel = err/noise_means[chan]
+		if len(noise_means)>chan and noise_means[chan]>0:
+			snr_lgad_channel = mean/noise_means[chan]
+			snr_err_lgad_channel = err/noise_means[chan]
+		else:
+			snr_lgad_channel=0
+			snr_err_lgad_channel=0			
 
 		if slewrate>0:
 			jitter = 1000.*noise_means[chan]/slewrate
@@ -1457,7 +1480,7 @@ def get_scan_results(scan_num,chan,laser):
 
 
 	graphs_noise = []
-	for ichan in range(4):
+	for ichan in range(n_channels):
 		graphs_noise.append( ROOT.TGraphErrors(len(biases),array("d",lgad_biases),array("d",col_mean_noise[ichan]),array("d",[0.1 for i in biases]),array("d",col_err_noise[ichan])))
 		graphs_noise[-1].SetTitle("Noise in channel %i, scan %i" %(ichan,scan_num))
 	#mgraph.Add(graph_norm)
