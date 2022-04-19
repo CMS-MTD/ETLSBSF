@@ -50,7 +50,6 @@ def get_extra_cut(run,ch):
 
 	return extra_cut
 
-
 def get_min_amp(run,ch):
 	minAmp =15
 	if run==151172 or run==151173: minAmp = 40
@@ -118,8 +117,84 @@ def get_min_amp(run,ch):
 	if run==44100: minAmp=100
 	if run==44070 and ch==0:minAmp=100
 	if run>=153302 and run<=153306: minAmp=50
-	if run>=50000 and run<60000: minAmp=50
+	if run>=50000 and run<70000: minAmp=50
 	return minAmp
+
+
+def get_time_range(run,ch):
+	mint = 5.8e-9
+	maxt =6.8e-9
+
+	if run>=2022 and run<= 2028:
+		mint = -3.3e-9
+		maxt = -1.6e-9
+	if run>=151982 and run<=151997:
+		mint = 6.2e-9
+		maxt = 7.2e-9
+
+	if run>=152104 and run<=152108: 
+		mint = 4.7e-9
+		maxt = 5.7e-9
+
+	if run>27000 and run<30000:
+		mint = 6.4e-9 
+		maxt = 7.4e-9
+
+	if run>28200 and run<30000:
+		mint = 3.5e-9 
+		maxt = 4.5e-9
+
+	if run>=153485 and run<=153503:
+		mint = 3.3e-9
+		maxt = 4.9e-9
+	
+	if run>=153504 and run<=153556:
+		mint=2e-9
+		maxt=3e-9
+
+	if run>=153579 and run<=153618:
+		mint=0.5e-9
+		maxt=1.5e-9
+
+	if run>=826 and run<=840:
+		mint=-0.3e-9
+		maxt=0.7e-9
+
+	if run>=153621 and run<=153630:
+		mint=-0.3e-9
+		maxt=0.7e-9
+
+	if run>50000 and run<70000:
+		mint=1.5e-9
+		maxt=3.0e-9
+
+	return mint,maxt
+
+
+def get_photek_params(run):
+	photek_thresh = 15
+	photek_max = 200
+	photek_chan=3
+	if run>=2022 and run<= 2028: photek_thresh=50
+	if run>27000 and run<30000:
+		photek_thresh =50
+		photek_max = 100
+	if run>28200 and run<30000:
+		photek_thresh =60
+		photek_max = 120
+
+	if run>50000 and run<70000:
+		photek_thresh =200
+		photek_max = 350
+		photek_chan=7
+
+	return photek_thresh,photek_max,photek_chan	
+
+def prep_dirs():
+	if not os.path.exists("plots"):
+		os.makedirs("plots")	
+	if not os.path.exists("plots/runs"):
+		os.makedirs("plots/runs")	
 
 def plot_single_scan(scan_num,graph,graph_MCP,graph_temp,graph_lgadbias,graph_current_lgadbias, graph_time_res,name,temp):
 	cosmetic_tgraph(graph,3)
@@ -457,7 +532,7 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 	if "HPK2_8e14_1p5e15" in series_num or "HPK2_repro" in series_num:
 		if "split34" not in series_num: leg = ROOT.TLegend(0.2,0.7,0.83,0.89)
 		else: leg = ROOT.TLegend(0.2,0.78,0.83,0.89)
-	if "HPK2_split" or "FBK_mortality" in series_num:
+	if "HPK2_split" or "FBK" in series_num:
 		leg = ROOT.TLegend(0.15,0.7,0.89,0.89)
 
 	elif( plottype == 1 or plottype== 9 or plottype == 14 or plottype==19 or plottype==22 or plottype==24 or plottype==25 or plottype==35 or plottype==39 or plottype==13 or plottype==41 or plottype==3 or plottype==38 or plottype==42 or plottype==43) and series_num!="7":
@@ -487,7 +562,8 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 		if "HPK2_8e14_1p5e15" in series_num or "HPK2_repro" in series_num: leg.SetNColumns(3)
 		if series_num=="ATLAS": leg.SetNColumns(2)
 		if "HPK2_split" in series_num: leg.SetNColumns(2)
-		if "FBK_mortality" in series_num: leg.SetNColumns(2)
+		if "FBK" in series_num: leg.SetNColumns(2)
+
 		#if series_num=="HPK2_8e14": leg.SetNColumns(2)
 	n_legend_entries=0
 	for i,scan in enumerate(scan_nums):
@@ -524,7 +600,7 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 		# cosmetic_tgraph(graph,i,tb) #### better default.
 	 	#else: cosmetic_tgraph_organized(graph,names[i],tb)
 		mgraph.Add(graph)
-		
+		if "(chan" in names[i]: names[i] = names[i][0:len(names[i])-7] # remove chan label
 		if "repro" in series_num and n_legend_entries >= 12: continue
 		if "split34" in series_num and n_legend_entries >=6: continue
 		if series_num=="CMSATLAS" and "ATLAS" in names[i]: continue
@@ -553,7 +629,7 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 	if "HPK2_split" in series_num and plottype==14: 
 		mgraph.GetYaxis().SetRangeUser(0, 35.)
 
-	if "FBK_mortality" in series_num and plottype==14: 
+	if "FBK" in series_num and plottype==14: 
 		mgraph.GetYaxis().SetRangeUser(0, 30.)
 
 	if series_num=="HPK2_8e14_temp":
@@ -670,78 +746,18 @@ def drawMultiStats(st1, st2, c1=ROOT.kRed, c2=ROOT.kBlue):
     	st2.Draw()
 
 def get_time_res_channel(tree,ch,run=-1):
-	#(70,-3.3e-9,-1.6e-9)
-	mint = 5.8e-9
-	maxt =6.8e-9
-
-	if run>=2022 and run<= 2028:
-		mint = -3.3e-9
-		maxt = -1.6e-9
-	if run>=151982 and run<=151997:
-		mint = 6.2e-9
-		maxt = 7.2e-9
-
-	if run>=152104 and run<=152108: 
-		mint = 4.7e-9
-		maxt = 5.7e-9
-
-	if run>27000 and run<30000:
-		mint = 6.4e-9 
-		maxt = 7.4e-9
-
-	if run>28200 and run<30000:
-		mint = 3.5e-9 
-		maxt = 4.5e-9
-
-	if run>=153485 and run<=153503:
-		mint = 3.3e-9
-		maxt = 4.9e-9
-	
-	if run>=153504 and run<=153556:
-		mint=2e-9
-		maxt=3e-9
-
-	if run>=153579 and run<=153618:
-		mint=0.5e-9
-		maxt=1.5e-9
-
-	if run>=826 and run<=840:
-		mint=-0.3e-9
-		maxt=0.7e-9
-
-	if run>=153621 and run<=153630:
-		mint=-0.3e-9
-		maxt=0.7e-9
-
-	if run>50000 and run<70000:
-		mint=1.5e-9
-		maxt=3.0e-9
+	mint,maxt = get_time_range(run,ch)
 
 	hist = ROOT.TH1D("h","",70,mint,maxt)
 	
-	photek_thresh = 15
-	photek_max = 200
-	photek_chan=3
-	if run>=2022 and run<= 2028: photek_thresh=50
-	if run>27000 and run<30000:
-		photek_thresh =50
-		photek_max = 100
-	if run>28200 and run<30000:
-		photek_thresh =60
-		photek_max = 120
+	photek_thresh,photek_max,photek_chan = get_photek_params(run)
 
-	if run>50000 and run<70000:
-		photek_thresh =200
-		photek_max = 350
-		photek_chan=7
-
-	# if run < 152719,152731,
 	CFD = 15
 	extra_cut = get_extra_cut(run,ch)
 	minAmp = get_min_amp(run,ch)
 	if run >=152719 and run <= 152731: CFD = 30
 	tree.Project("h","LP2_%i[%i]-LP2_20[%i]"%(CFD,ch,photek_chan),"amp[%i]>%i && amp[%i]<360 && amp[%i]>%i && amp[%i]<%i && LP2_20[%i]!=0 && LP2_20[%i]!=0 %s"%(ch,minAmp,ch,photek_chan,photek_thresh,photek_chan,photek_max,photek_chan,ch,extra_cut))	
-	f1 = ROOT.TF1("f1","gaus",5.8e-9,6.8e-9)
+	f1 = ROOT.TF1("f1","gaus",mint,maxt)
 	hist.Fit(f1,"Q")
 	st1 = copy.deepcopy(getStats(hist)) #Need to deep copy the first stats because root will return a pointer that is overwritten during the next fit
 
@@ -767,44 +783,9 @@ def get_time_res_channel(tree,ch,run=-1):
 	return 1e12*f1.GetParameter(2),1e12*f1.GetParError(2),f1.GetChisquare(), 1e12*f2.GetParameter(3),1e12*CBerror,f2.GetChisquare()
 
 def get_optimum_timeres_channel(tree,ch,run=-1):
-		#(70,-3.3e-9,-1.6e-9)
-	mint = 5.8e-9
-	maxt =6.8e-9
+	mint,maxt = get_time_range(run,ch)
 
-	if run>=2022 and run<= 2028:
-		mint = -3.3e-9
-		maxt = -1.6e-9
-	if run>=151982 and run<=151997:
-		mint = 6.2e-9
-		maxt = 7.2e-9
-
-	if run>=152104 and run<=152108: 
-		mint = 4.7e-9
-		maxt = 5.7e-9
-
-	if run>27000 and run<30000:
-		mint = 6.4e-9 
-		maxt = 7.4e-9
-
-	if run>28200 and run<30000:
-		mint = 3.5e-9 
-		maxt = 4.5e-9
-	
-	if run>=153504 and run<=153556:
-		mint=2e-9
-		maxt=3e-9
-
-	photek_thresh = 15
-	photek_max = 200
-	if run>=2022 and run<= 2028: photek_thresh=50
-	if run>27000 and run<30000:
-		photek_thresh =50
-		photek_max = 100
-	if run>28200 and run<30000:
-		photek_thresh =60
-		photek_max = 120
-
-
+	photek_thresh,photek_max,photek_chan = get_photek_params(run)
 
 	minAmp = get_min_amp(run,ch)
 	extra_cut = get_extra_cut(run,ch)
@@ -815,9 +796,11 @@ def get_optimum_timeres_channel(tree,ch,run=-1):
 	hist = ROOT.TH1D("h","",70,mint,maxt)
 
 	for CFD in CFD_list:
-		hist.Reset()
-		tree.Project("h","LP2_%i[%i]-LP2_20[3]"%(CFD,ch),"amp[%i]>%i && amp[%i]<360 && amp[3]>%i && amp[3]<%i && LP2_20[3]!=0 && LP2_20[%i]!=0 %s"%(ch,minAmp,ch,photek_thresh,photek_max,ch,extra_cut))	
-		f = ROOT.TF1("f%i"%CFD,"gaus",5.8e-9,6.8e-9)
+		hist.Reset()	
+		tree.Project("h","LP2_%i[%i]-LP2_20[%i]"%(CFD,ch,photek_chan),"amp[%i]>%i && amp[%i]<360 && amp[%i]>%i && amp[%i]<%i && LP2_20[%i]!=0 && LP2_20[%i]!=0 %s"%(ch,minAmp,ch,photek_chan,photek_thresh,photek_chan,photek_max,photek_chan,ch,extra_cut))
+
+		f = ROOT.TF1("f%i"%CFD,"gaus",mint,maxt)
+
 		hist.Fit(f,"Q")
 		res_list.append(1e12*f.GetParameter(2))
 		unc_list.append(1e12*f.GetParError(2))
@@ -921,8 +904,9 @@ def get_mean_amp_charge_averaging(tree,ch,run=-1,laser=False):
 
 def get_mean_response_channel(tree,ch,run=-1,laser=False):
 	hist = ROOT.TH1D("h","",50,0,400)
-	photek_chan=3
-	if run>50000 and run<70000: photek_chan=7
+	
+	photek_thresh,photek_max,photek_chan = get_photek_params(run)
+
 	if run>=152104 and run<=152108: hist = ROOT.TH1D("h","",50,2,710)
 
 	minAmp = get_min_amp(run,ch)
@@ -932,7 +916,7 @@ def get_mean_response_channel(tree,ch,run=-1,laser=False):
 		minAmp=0.5
 		hist = ROOT.TH1D("h","",350,0,350)
 
-	if not laser: selection = "amp[%i]>%f&&amp[%i]>10 %s"%(ch,minAmp,photek_chan,extra_cut)
+	if not laser: selection = "amp[%i]>%f&&amp[%i]>%i %s"%(ch,minAmp,photek_chan,photek_thresh,extra_cut)
 	else: selection =  "amp[%i]>%f"%(ch,minAmp)
 	print "get_mean_response selection: ",selection
 	hist.StatOverflows(True)
@@ -966,8 +950,7 @@ def get_charge_channel(tree,ch,run=-1,laser=False):
 	histname = "h%i"%run
 	minAmp = get_min_amp(run,ch)
 	extra_cut = get_extra_cut(run,ch)
-	photek_chan=3
-	if run>50000 and run<70000: photek_chan=7
+	photek_thresh,photek_max,photek_chan = get_photek_params(run)
 
 	if run >= 151357 and run<=151374: 
 		hist = ROOT.TH1D(histname,"",40,1,30)
@@ -985,7 +968,7 @@ def get_charge_channel(tree,ch,run=-1,laser=False):
 
 	hist.StatOverflows(True)
 
-	if not laser: selection = "amp[%i]>%f&&amp[%i]>10 %s"%(ch,minAmp,photek_chan,extra_cut)
+	if not laser: selection = "amp[%i]>%f&&amp[%i]>%i %s"%(ch,minAmp,photek_chan,photek_thresh,extra_cut)
 	else: selection =  "amp[%i]>%f"%(ch,minAmp)
 	print "Selection is ",selection
 	tree.Project(histname,"-1000*integral[%i]*1e9*50/4700"%ch,selection)
@@ -1513,6 +1496,7 @@ BV_for_charges15=[]
 BV_for_charges25=[]
 Temp_for_charges=[]
 isLaserRun=[]
+prep_dirs()
 with open(series_txt_filename) as series_txt_file:
 		for line in series_txt_file:
 			if len(line.split(","))==0: continue
