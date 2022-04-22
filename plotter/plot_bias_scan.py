@@ -118,6 +118,7 @@ def get_min_amp(run,ch):
 	if run==44070 and ch==0:minAmp=100
 	if run>=153302 and run<=153306: minAmp=50
 	if run>=50000 and run<70000: minAmp=50
+	if run>=60000 and run<70000 and ch==4: minAmp=20
 	return minAmp
 
 
@@ -164,10 +165,13 @@ def get_time_range(run,ch):
 		mint=-0.3e-9
 		maxt=0.7e-9
 
-	if run>50000 and run<70000:
+	if run>50000 and run<60000:
 		mint=1.5e-9
 		maxt=3.0e-9
 
+	if run>60000 and run<70000:
+		mint=3.75e-9
+		maxt=5.25e-9
 	return mint,maxt
 
 
@@ -516,6 +520,14 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 		x_axis = "Run number"
 		filename = "grtemp_vs_runnum"
 
+
+	if plottype==52: 
+		outputtag = "_mean_noise"
+		y_axis = "Mean noise [mV]"
+		x_axis = "Bias voltage [V]"
+		filename = "grmean_noise"
+
+
 	c = ROOT.TCanvas()
 	c.SetGridy()
 	c.SetGridx()
@@ -621,7 +633,7 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 		if plottype!=51: mgraph.GetYaxis().SetRangeUser(0.7*currentymin, 1.35*currentymax)
 		else: mgraph.GetYaxis().SetRangeUser(1.3*currentymin, 0.7*currentymax) ## negative
 
-	if "HPK2_8e14_1p5e15" in series_num or "HPK2_repro" in series_num:
+	if "HPK2_8e14_1p5e15" in series_num or "HPK2_repro" in series_num or "FBK" in series_num:
 		currentymin = mgraph.GetYaxis().GetXmin()
 		currentymax = mgraph.GetYaxis().GetXmax()
 		mgraph.GetYaxis().SetRangeUser(currentymin, 1.35*currentymax)
@@ -1119,6 +1131,9 @@ def get_scan_results(scan_num,chan,laser):
 	jitters=[]
 	jitter_errs=[]
 
+	primary_noise = []
+	primary_noise_err = []
+
 	scan_txt_filename = "../VoltageScanDataRegistry/scan%i.txt" % scan_num
 	with open(scan_txt_filename) as scan_txt_file:
 		for line in scan_txt_file:
@@ -1156,7 +1171,13 @@ def get_scan_results(scan_num,chan,laser):
 		tree = ROOT.TChain("pulse")
 		if type(run) is list:
 			# for r in run: tree.Add("/home/daq/ScopeData/Reco/run_scope%i.root" % r)
-			for r in run: tree.Add("root://cmseos.fnal.gov//store/group/cmstestbeam/SensorBeam2022/LecroyScope/RecoData/TimingDAQRECO/RecoWithTracks/v1/run%i_info.root" % r)
+			version_number = "v10"
+			for r in run:
+				if r<60000:
+					version_number="v1"
+				file_name= "root://cmseos.fnal.gov//store/group/cmstestbeam/SensorBeam2022/LecroyScope/RecoData/TimingDAQRECO/RecoWithTracks/"+version_number+"/run%i_info.root"
+				#tree.Add("root://cmseos.fnal.gov//store/group/cmstestbeam/SensorBeam2022/LecroyScope/RecoData/TimingDAQRECO/RecoWithTracks/%(version)s/run%i_info.root"%{"version":version_number}% r)
+				tree.Add(file_name% r)
 			run = run[0]
 		else:
 			tree.Add("/home/daq/ScopeData/Reco/run_scope%i.root" % run)
@@ -1188,7 +1209,9 @@ def get_scan_results(scan_num,chan,laser):
 		mean_MCP,err_MCP = get_mean_response_channel(tree,3)
 
 		noise_means,noise_errs = get_mean_baseline_RMS(tree)
-
+		primary_noise_tmp,primary_noise_err_tmp = get_mean_baseline_RMS_channel(tree,chan)
+		primary_noise.append(primary_noise_tmp)
+		primary_noise_err.append(primary_noise_err_tmp)
 		if doCFDScan:
 			this_CFD_scan_res,this_err_CFD_scan_res,this_optimum_CFD = get_optimum_timeres_channel(tree,chan,run)
 		else:
@@ -1388,6 +1411,7 @@ def get_scan_results(scan_num,chan,laser):
 	addGraph(graph_Dict, "graph_charge_vs_amp", len(biases), mean_responses, mean_charges, err_responses, err_charges)
 	addGraph(graph_Dict, "graph_res_vs_charge", len(biases), mean_charges, time_res, err_charges, err_time_res)
 	addGraph(graph_Dict, "graph_res_corr_vs_charge", len(biases), mean_charges, time_res_corr, err_charges, err_time_res)
+	addGraph(graph_Dict, "graph_mean_noise", len(biases), biases, primary_noise, [0.1 for i in biases], primary_noise_err)
 
 	#vs run number
 	if type(runs[0]) is not list:
@@ -1454,7 +1478,7 @@ def get_scan_results(scan_num,chan,laser):
 	graph_Dict["graph_charge_vs_runnum"].SetName("grcharge_vs_runnum%i_%i"%(scan_num,chan))
 	graph_Dict["graph_current_vs_runnum"].SetName("grcurrent_vs_runnum%i_%i"%(scan_num,chan))
 	graph_Dict["graph_temp_vs_runnum"].SetName("grtemp_vs_runnum%i_%i"%(scan_num,chan))
-
+	graph_Dict["graph_mean_noise"].SetName("grmean_noise%i_%i"%(scan_num,chan))
 
 
 	##convert rows to columns
@@ -1536,7 +1560,7 @@ for i,scan_num in enumerate(scan_nums):
 
 outFile.Save()
 
-for i in range(44+3+4):
+for i in range(44+3+4+1):
 	if not isLaserRun[0] and ((i >=20 and i<=24) or (i>=26 and i<=34)): continue
 	plot_overlay(outFile,names,temps,series_num,i+1)
 
