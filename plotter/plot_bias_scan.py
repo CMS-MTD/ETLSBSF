@@ -200,6 +200,8 @@ def prep_dirs():
 		os.makedirs("plots")	
 	if not os.path.exists("plots/runs"):
 		os.makedirs("plots/runs")	
+	if not os.path.exists("plots/sensors"):
+		os.makedirs("plots/sensors")	
 
 def plot_single_scan(scan_num,graph,graph_MCP,graph_temp,graph_lgadbias,graph_current_lgadbias, graph_time_res,name,temp):
 	cosmetic_tgraph(graph,3)
@@ -263,7 +265,7 @@ def plot_noise(graphs_noise):
 
 def plot_overlay(outfile,names,temps,series_num,plottype):
 	if plottype==1: 
-		outputtag = ""
+		outputtag = "_amp_vs_bias"
 		y_axis = "MPV amplitude [mV]"
 		x_axis = "Bias voltage [V]"
 		filename = "gr"
@@ -758,7 +760,7 @@ def drawMultiStats(st1, st2, c1=ROOT.kRed, c2=ROOT.kBlue):
     	st1.Draw()
     	st2.Draw()
 
-def get_time_res_channel(tree,ch,run=-1):
+def get_time_res_channel(tree,ch,run=-1,sensor_name="",bias_voltage=0):
 	mint,maxt = get_time_range(run,ch)
 
 	hist = ROOT.TH1D("h","",70,mint,maxt)
@@ -785,8 +787,9 @@ def get_time_res_channel(tree,ch,run=-1):
 		f2.Draw("same")
 		drawMultiStats(st1, st2)
 
-		if ch==2: c.Print("plots/runs/Run%i_time.pdf"%run)
-		else: c.Print("plots/runs/Run%i_ch%i_time.pdf"%(run,ch))
+		# if ch==2: c.Print("plots/runs/Run%i_time.pdf"%run)
+		# c.Print("plots/runs/Run%i_ch%i_time.pdf"%(run,ch))
+		c.Print("plots/sensors/%s/Run%i_%iV_ch%i_time.pdf"%(sensor_name,run,bias_voltage,ch))
 	#print 'Run NUmber %d,  %f, %f ' %(run,1e12*f1.GetParameter(2),1e12*f1.GetParError(2))
 	if f2.GetParameter(3) !=0:
 		CBerror = 0.0 if f2.GetParError(3) / f2.GetParameter(3) > 0.1 else f2.GetParError(3)
@@ -795,7 +798,7 @@ def get_time_res_channel(tree,ch,run=-1):
 	#print '\033[0;31m Run NUmber %d,  %f, %f \033[0m' %(run,1e12*f2.GetParameter(3),1e12*CBerror)
 	return 1e12*f1.GetParameter(2),1e12*f1.GetParError(2),f1.GetChisquare(), 1e12*f2.GetParameter(3),1e12*CBerror,f2.GetChisquare()
 
-def get_optimum_timeres_channel(tree,ch,run=-1):
+def get_optimum_timeres_channel(tree,ch,run=-1,sensor_name="",bias_voltage=0):
 	mint,maxt = get_time_range(run,ch)
 
 	photek_thresh,photek_max,photek_chan = get_photek_params(run)
@@ -821,8 +824,9 @@ def get_optimum_timeres_channel(tree,ch,run=-1):
 			c = ROOT.TCanvas()
 			hist.Draw()
 			f.Draw("same")
-			if ch==2: c.Print("plots/runs/Run%i_time%i.pdf"%(run,CFD))
-			else: c.Print("plots/runs/Run%i_ch%i_time%i.pdf"%(run,ch,CFD))
+			# c.Print("plots/runs/Run%i_ch%i_time%i.pdf"%(run,ch,CFD))
+			c.Print("plots/sensors/%s/Run%i_%iV_ch%i_time%i.pdf"%(sensor_name,run,bias_voltage,ch,CFD))
+
 
 	minres, optimum_idx =  min((val, idx) for (idx, val) in enumerate(res_list))
 	optimum_cfd = CFD_list[optimum_idx]
@@ -833,16 +837,15 @@ def get_optimum_timeres_channel(tree,ch,run=-1):
 	if run>0:
 		c = ROOT.TCanvas()
 		graph.Draw("AELP")
-
-		if ch==2: c.Print("plots/runs/Run%i_CFDscan.pdf"%run)
-		else: c.Print("plots/runs/Run%i_ch%i_CFDscan.pdf"%(run,ch))
+		# c.Print("plots/runs/Run%i_ch%i_CFDscan.pdf"%(run,ch))
+		c.Print("plots/sensors/%s/Run%i_%iV_ch%i_CFDscan.pdf"%(sensor_name,run,bias_voltage,ch))
 
 
 	return minres,minres_err,optimum_cfd
 
 
 
-def get_slew_rate_channel(tree,ch,run=-1):
+def get_slew_rate_channel(tree,ch,run=-1,sensor_name="",bias_voltage=0):
 	hist = ROOT.TH1D("h","",60,0,600e9)
 	minAmp = get_min_amp(run,ch)
 	extra_cut = get_extra_cut(run,ch)
@@ -852,12 +855,11 @@ def get_slew_rate_channel(tree,ch,run=-1):
 	if run>0:
 		c = ROOT.TCanvas()
 		hist.Draw()
-		if ch==2: c.Print("plots/runs/Run%i_slewrate.pdf"%run)
-		else: c.Print("plots/runs/Run%i_ch%i_slewrate.pdf"%(run,ch))
+		#c.Print("plots/runs/Run%i_ch%i_slewrate.pdf"%(run,ch))
 	#print 'Run NUmber %d,  %f, %f ' %(run,1e12*f1.GetParameter(2),1e12*f1.GetParError(2))
 	return 1e-9 * hist.GetMean(),1e-9* hist.GetMeanError()
 
-def get_risetime_channel(tree,ch,run=-1):
+def get_risetime_channel(tree,ch,run=-1,sensor_name="",bias_voltage=0):
 	hist = ROOT.TH1D("h","",60,100,1200)
 	minAmp = get_min_amp(run,ch)
 	extra_cut = get_extra_cut(run,ch)
@@ -868,8 +870,8 @@ def get_risetime_channel(tree,ch,run=-1):
 	if run>0:
 		c = ROOT.TCanvas()
 		hist.Draw()
-		if ch==2: c.Print("plots/runs/Run%i_risetime.pdf"%run)
-		else: c.Print("plots/runs/Run%i_ch%i_risetime.pdf"%(run,ch))
+		# c.Print("plots/runs/Run%i_ch%i_risetime.pdf"%(run,ch))
+		c.Print("plots/sensors/%s/Run%i_%iV_ch%i_risetime.pdf"%(sensor_name,run,bias_voltage,ch))
 	#print 'Run NUmber %d,  %f, %f ' %(run,1e12*f1.GetParameter(2),1e12*f1.GetParError(2))
 	return hist.GetMean(),hist.GetMeanError()
 
@@ -892,7 +894,7 @@ def GetProfIntegral(hist, i_init, i_end):
 		integral = integral + hist.GetBinContent(i)*hist.GetBinWidth(i)
 	return integral
 
-def get_mean_amp_charge_averaging(tree,ch,run=-1,laser=False):
+def get_mean_amp_charge_averaging(tree,ch,run=-1,laser=False,sensor_name="",bias_voltage=0):
 	if not laser: return 0
 	histname = "average_%i_%i"%(run,ch)
 	hist = ROOT.TH2D(histname,"",2000,30e-9,80e-9,50,0,-1200)
@@ -915,7 +917,7 @@ def get_mean_amp_charge_averaging(tree,ch,run=-1,laser=False):
 		else: c.Print("plots/runs/Run%i_ch%i_pulse.pdf"%(run,ch))
 	return -1.*profx.GetMinimum(),charge
 
-def get_mean_response_channel(tree,ch,run=-1,laser=False):
+def get_mean_response_channel(tree,ch,run=-1,laser=False,sensor_name="",bias_voltage=0):
 	hist = ROOT.TH1D("h","",50,0,400)
 	
 	photek_thresh,photek_max,photek_chan = get_photek_params(run)
@@ -953,13 +955,13 @@ def get_mean_response_channel(tree,ch,run=-1,laser=False):
 		hist.SetTitle(";Amplitude [mV];Events")
 		hist.Draw()
 		f1.Draw("same")
-		if ch==2: c.Print("plots/runs/Run%i_amp.pdf"%run)
-		else: c.Print("plots/runs/Run%i_ch%i_amp.pdf"%(run,ch))
+		#c.Print("plots/runs/Run%i_ch%i_amp.pdf"%(run,ch))
+		c.Print("plots/sensors/%s/Run%i_%iV_ch%i_amp.pdf"%(sensor_name,run,bias_voltage,ch))
 		#c.Print("plots/runs/Run%i_amp.root"%run)
 	# return f1.GetParameter(1),f1.GetParError(1)
 	return mean,err
 
-def get_charge_channel(tree,ch,run=-1,laser=False):
+def get_charge_channel(tree,ch,run=-1,laser=False,sensor_name="",bias_voltage=0):
 	histname = "h%i"%run
 	minAmp = get_min_amp(run,ch)
 	extra_cut = get_extra_cut(run,ch)
@@ -1008,8 +1010,8 @@ def get_charge_channel(tree,ch,run=-1,laser=False):
 		hist.SetTitle(";Integrated charge [fC];Events")
 		hist.Draw()
 		f1.Draw("same")
-		if ch==2: c.Print("plots/runs/Run%i_charge.pdf"%run)
-		else: c.Print("plots/runs/Run%i_ch%i_charge.pdf"%(run,ch))
+		# c.Print("plots/runs/Run%i_ch%i_charge.pdf"%(run,ch))
+		c.Print("plots/sensors/%s/Run%i_%iV_ch%i_charge.pdf"%(sensor_name,run,bias_voltage,ch))
 		# c.Print("plots/runs/Run%i_charge.root"%run)
 		# c.Print("plots/runs/Run%i_charge.C"%run)
 	#return f1.GetParameter(1),f1.GetParError(1)
@@ -1050,7 +1052,8 @@ def get_mean_response(tree):
 def addGraph(d, name, npoints, x, y, xerr, yerr):
 	d[name] = ROOT.TGraphErrors(npoints,array("d",x),array("d",y),array("d",xerr),array("d",yerr))
 
-def get_scan_results(scan_num,chan,laser):
+def get_scan_results(scan_num,chan,laser,sensor_name):
+	sensor_name=sensor_name.replace(" ","_")
 	runs=[]
 	biases=[]
 	biases_meas=[]
@@ -1183,10 +1186,13 @@ def get_scan_results(scan_num,chan,laser):
 		else:
 			tree.Add("/home/daq/ScopeData/Reco/run_scope%i.root" % run)
 		
+		if not os.path.exists("plots/sensors/%s/"%sensor_name):
+			os.makedirs("plots/sensors/%s/"%sensor_name)
+
 		if chan < 0:
 			mean,err = get_mean_response(tree) ### find max amp channel
 		else: 
-			mean,err = get_mean_response_channel(tree,chan,run,laser) ## use specified channel from series txt file
+			mean,err = get_mean_response_channel(tree,chan,run,laser,sensor_name,biases[i]) ## use specified channel from series txt file
 			if doAverage:
 				mean_amp_avg,mean_charge_avg = get_mean_amp_charge_averaging(tree,chan,run,laser) ## use specified channel from series txt file
 				mean_diode_amp_avg,mean_diode_charge_avg = get_mean_amp_charge_averaging(tree,1,run,laser) ## use specified channel from series txt file
@@ -1199,12 +1205,18 @@ def get_scan_results(scan_num,chan,laser):
 			err_charge_avg=0
 			err_diode_charge_avg=0
 			err_diode_amp_avg=0
-			diodemean,diodeerr= get_mean_response_channel(tree,1,run,laser)
-			diode_charge_mean,diode_charge_err= get_charge_channel(tree,1,run,laser)
-			mean_charge,err_charge = get_charge_channel(tree,chan,run,laser) ## use specified channel from series txt file
-			sigma,sigmaerr,chi2,sigmaCB,sigmaerrCB,chi2CB = get_time_res_channel(tree,chan,run)
-			slewrate,slewerr = get_slew_rate_channel(tree,chan,run)
-			risetime,riseerr = get_risetime_channel(tree,chan,run)
+			if laser: 
+				diodemean,diodeerr= get_mean_response_channel(tree,1,run,laser,sensor_name,biases[i])
+				diode_charge_mean,diode_charge_err= get_charge_channel(tree,1,run,laser,sensor_name,biases[i])
+			else:
+				diodemean=0
+				diodeerr=0
+				diode_charge_mean=0
+				diode_charge_err=0
+			mean_charge,err_charge = get_charge_channel(tree,chan,run,laser,sensor_name,biases[i]) ## use specified channel from series txt file
+			sigma,sigmaerr,chi2,sigmaCB,sigmaerrCB,chi2CB = get_time_res_channel(tree,chan,run,sensor_name,biases[i])
+			slewrate,slewerr = get_slew_rate_channel(tree,chan,run,sensor_name,biases[i])
+			risetime,riseerr = get_risetime_channel(tree,chan,run,sensor_name,biases[i])
 
 		##MCP
 		mean_MCP,err_MCP = get_mean_response_channel(tree,3)
@@ -1214,7 +1226,7 @@ def get_scan_results(scan_num,chan,laser):
 		primary_noise.append(primary_noise_tmp)
 		primary_noise_err.append(primary_noise_err_tmp)
 		if doCFDScan:
-			this_CFD_scan_res,this_err_CFD_scan_res,this_optimum_CFD = get_optimum_timeres_channel(tree,chan,run)
+			this_CFD_scan_res,this_err_CFD_scan_res,this_optimum_CFD = get_optimum_timeres_channel(tree,chan,run,sensor_name)
 		else:
 			this_CFD_scan_res=20
 			this_err_CFD_scan_res=0
@@ -1546,7 +1558,7 @@ with open(series_txt_filename) as series_txt_file:
 
 outFile = ROOT.TFile("buffer.root","RECREATE")
 for i,scan_num in enumerate(scan_nums):
-	graphs_noise, graph_Dict = get_scan_results(scan_num,chans[i],isLaserRun[i])
+	graphs_noise, graph_Dict = get_scan_results(scan_num,chans[i],isLaserRun[i],names[i])
 	for key, graph in graph_Dict.items():
 		graph.Write()
 
