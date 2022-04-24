@@ -119,6 +119,7 @@ def get_min_amp(run,ch):
 	if run>=153302 and run<=153306: minAmp=50
 	if run>=50000 and run<70000: minAmp=50
 	if run>=60000 and run<70000 and ch==4: minAmp=20
+	if run>=60450 and run<70000: minAmp=15
 	return minAmp
 
 
@@ -764,7 +765,7 @@ def get_time_res_channel(tree,ch,run=-1):
 	
 	photek_thresh,photek_max,photek_chan = get_photek_params(run)
 
-	CFD = 15
+	CFD = 30
 	extra_cut = get_extra_cut(run,ch)
 	minAmp = get_min_amp(run,ch)
 	if run >=152719 and run <= 152731: CFD = 30
