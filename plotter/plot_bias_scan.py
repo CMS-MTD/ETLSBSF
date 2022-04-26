@@ -179,8 +179,11 @@ def get_time_range(run,ch):
 	if run>60000 and run<70000:
 		mint=3.75e-9
 		maxt=5.25e-9
+	if run>60976 and 61000:
+		mint = 0
+		maxt = 3e-9
 	return mint,maxt
-
+	
 
 def get_photek_params(run):
 	photek_thresh = 15
