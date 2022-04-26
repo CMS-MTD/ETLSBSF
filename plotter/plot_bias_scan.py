@@ -126,6 +126,8 @@ def get_min_amp(run,ch):
 	if run>=60658 and run<61000 and ch==2: minAmp=30
 	if run>=60491 and run<60573 and ch==3: minAmp=30
 	if run>=60658 and run<61000 and ch==3: minAmp=30
+        if run>=61134 and run<62000: minAmp=60
+
 	return minAmp
 
 
