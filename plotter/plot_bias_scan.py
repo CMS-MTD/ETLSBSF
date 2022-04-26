@@ -118,7 +118,7 @@ def get_min_amp(run,ch):
 	if run==44070 and ch==0:minAmp=100
 	if run>=153302 and run<=153306: minAmp=50
 	if run>=50000 and run<51000: minAmp=50
-	if run>=60000 and run<51000 and ch==4: minAmp=20
+	if run>=60000 and run<60450: minAmp=50
 	if run>=60450 and run<61000: minAmp=15
 	if run>=60573 and run<61000 and ch==6: minAmp=35
 	if run>=60532 and run<61000 and ch==0: minAmp=40
@@ -179,7 +179,7 @@ def get_time_range(run,ch):
 	if run>60000 and run<70000:
 		mint=3.75e-9
 		maxt=5.25e-9
-	if run>60976 and 61000:
+	if run>60976 and run<63000:
 		mint = 0
 		maxt = 3e-9
 	return mint,maxt
