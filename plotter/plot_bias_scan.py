@@ -126,8 +126,7 @@ def get_min_amp(run,ch):
 	if run>=60658 and run<61000 and ch==2: minAmp=30
 	if run>=60491 and run<60573 and ch==3: minAmp=30
 	if run>=60658 and run<61000 and ch==3: minAmp=30
-        if run>=61134 and run<62000: minAmp=60
-
+	if run>=61134 and run<=61212: minAmp=60
 	return minAmp
 
 
@@ -589,6 +588,7 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 		if series_num=="ATLAS": leg.SetNColumns(2)
 		if "HPK2_split" in series_num: leg.SetNColumns(2)
 		if "FBK" in series_num: leg.SetNColumns(2)
+		if "FBKIHEP" in series_num: leg.SetNColumns(3)
 
 		#if series_num=="HPK2_8e14": leg.SetNColumns(2)
 	n_legend_entries=0
@@ -617,6 +617,20 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 
 	 		i_marker = 3
 	 		if "8e14" in  names[i]: i_marker=24
+	 		if "1.5e15" in names[i]: i_marker =20 
+
+	 		cosmetic_tgraph(graph,i_color,tb)
+	 		graph.SetMarkerStyle(i_marker)
+
+	 	if "FBKIHEP" in series_num:
+	 		i_color = 0
+	 		if "FBK deep" in names[i]: i_color=1
+	 		if "IHEP non-carb" in names[i]: i_color=2
+	 		if "IHEP carbon" in names[i]: i_color=3
+
+	 		i_marker = 3
+	 		if "6e14" in  names[i]: i_marker=21
+	 		if "1e15" in  names[i]: i_marker=24
 	 		if "1.5e15" in names[i]: i_marker =20 
 
 	 		cosmetic_tgraph(graph,i_color,tb)
@@ -1187,12 +1201,15 @@ def get_scan_results(scan_num,chan,laser,sensor_name):
 		if type(run) is list:
 			# for r in run: tree.Add("/home/daq/ScopeData/Reco/run_scope%i.root" % r)
 			version_number = "v10"
+			counter=0
 			for r in run:
 				if r<60000:
 					version_number="v1"
 				file_name= "root://cmseos.fnal.gov//store/group/cmstestbeam/SensorBeam2022/LecroyScope/RecoData/TimingDAQRECO/RecoWithTracks/"+version_number+"/run%i_info.root"
 				#tree.Add("root://cmseos.fnal.gov//store/group/cmstestbeam/SensorBeam2022/LecroyScope/RecoData/TimingDAQRECO/RecoWithTracks/%(version)s/run%i_info.root"%{"version":version_number}% r)
 				tree.Add(file_name% r)
+				counter = counter +1
+				if counter>=4: break
 			run = run[0]
 		else:
 			tree.Add("/home/daq/ScopeData/Reco/run_scope%i.root" % run)
@@ -1606,3 +1623,4 @@ outtable_BV.close()
 
 
 
+                                                

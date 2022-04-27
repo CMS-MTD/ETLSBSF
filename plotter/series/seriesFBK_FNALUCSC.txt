@@ -1,5 +1,7 @@
 40050,FBK 50 W18 1e15 FNAL 16ch board (chan0), -18,
+40017,IHEP 17 W7 1e15 (chan0) center box, -18,
 #40050,FBK 50 W18 1e15 chan1 (chan1), -18,
-20050, FBK 50 W18 1e15 SC board (chan3), -18
+20050,FBK 50 W18 1e15 UCSC board (chan3), -18
+30017,IHEP 17 W7 1e15 UCSC board(chan5), -18,
 #40050,FBK 50 W18 1e15 chan2 (chan2), -18,
 #40050,FBK 50 W18 1e15 chan3 (chan3), -18,
