@@ -118,9 +118,11 @@ def get_min_amp(run,ch):
 	if run==44070 and ch==0:minAmp=100
 	if run>=153302 and run<=153306: minAmp=50
 	if run>=50000 and run<51000: minAmp=50
-	if run>=60000 and run<60450: minAmp=50
-	if run>=60450 and run<61000: minAmp=15
-	if run>=60573 and run<61000 and ch==6: minAmp=35
+	if run>=52709 and run<52821 and (ch==4 or ch==5): minAmp=60
+        if run>=60000 and run<60450: minAmp=50
+	if run>=60213 and run<60431 and ch==4: minAmp=15
+        if run>=60450 and run<61000: minAmp=15
+        if run>=60573 and run<61000 and ch==6: minAmp=35
 	if run>=60532 and run<61000 and ch==0: minAmp=40
 	if run>=60491 and run<60573 and ch==2: minAmp=30
 	if run>=60658 and run<61000 and ch==2: minAmp=30
@@ -622,7 +624,7 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 	 		cosmetic_tgraph(graph,i_color,tb)
 	 		graph.SetMarkerStyle(i_marker)
 
-	 	if "FBKIHEP" in series_num:
+	 	if "FBKIHEP" or "formeeting" in series_num:
 	 		i_color = 0
 	 		if "FBK deep" in names[i]: i_color=1
 	 		if "IHEP non-carb" in names[i]: i_color=2
@@ -669,8 +671,8 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 	if "HPK2_split" in series_num and plottype==14: 
 		mgraph.GetYaxis().SetRangeUser(0, 35.)
 
-	if "FBK" in series_num and plottype==14: 
-		mgraph.GetYaxis().SetRangeUser(0, 30.)
+	#if "FBK" in series_num and plottype==14: 
+		#mgraph.GetYaxis().SetRangeUser(0, 30.)
 
 	if series_num=="HPK2_8e14_temp":
 		currentymin = mgraph.GetYaxis().GetXmin()
@@ -680,7 +682,7 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 	elif y_axis == "Risetime [ps] (10 to 90%)":
 		mgraph.GetYaxis().SetRangeUser(350,1000)
 		if series_num == "TB": mgraph.GetYaxis().SetRangeUser(350,850)
-	elif plottype==16 or plottype==17: 
+	elif plottype==16 or plottype==17 or plottype==36 or plottype==37: 
 		mgraph.GetYaxis().SetRangeUser(23,65)
 	
 	if (plottype==1 or plottype==14) and "HPK2" in series_num:
