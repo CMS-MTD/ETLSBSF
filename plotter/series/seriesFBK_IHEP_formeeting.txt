@@ -1,6 +1,6 @@
-30006,IHEP non-carb. 1e15 (chan4), -18,IHEP 6 W1 1e15
-30010,IHEP non-carb. 1.5e15 (chan5), -18,IHEP 10 W1-I 1.5e15
-30008,IHEP non-carb. 1e15 (chan3), -18, IHEP 8 W1-I 1e15
-30002,IHEP non-carb. 1.5e15 (chan4), -18,IHEP 2 W1-III 1.5e15
-30017,IHEP carbon 1e15 (chan5), -18, IHEP 17 W7 1e15
-30014,IHEP carbon 1.5e15 (chan6), -18, IHEP 14 W7 1.5e15
+30006,IHEP W1 III 1e15 (chan4), -18,IHEP 6 W1 1e15
+#30008,IHEP W1 I 1e15 (chan3), -18, IHEP 8 W1-I 1e15
+#30002,IHEP W1 III 1.5e15 (chan4), -18,IHEP 2 W1-III 1.5e15
+#30010,IHEP W1 I 1.5e15 (chan5), -18,IHEP 10 W1-I 1.5e15
+30017,IHEP W7 carbon 1e15 (chan5), -18, IHEP 17 W7 1e15
+30014,IHEP W7 carbon 1.5e15 (chan6), -18, IHEP 14 W7 1.5e15

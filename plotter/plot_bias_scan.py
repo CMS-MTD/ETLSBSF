@@ -36,7 +36,7 @@ photek_res_beam = 9 #ps
 diodeTarget = 41. #mV
 PiNCharge = 0.36 #fC
 doAverage=False
-doCFDScan=False
+doCFDScan=True
 n_channels=8
 
 def get_extra_cut(run,ch):
@@ -590,7 +590,7 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 		if series_num=="ATLAS": leg.SetNColumns(2)
 		if "HPK2_split" in series_num: leg.SetNColumns(2)
 		if "FBK" in series_num: leg.SetNColumns(2)
-		if "FBKIHEP" in series_num: leg.SetNColumns(3)
+		if "FBKIHEP" in series_num: leg.SetNColumns(2)
 
 		#if series_num=="HPK2_8e14": leg.SetNColumns(2)
 	n_legend_entries=0
@@ -627,8 +627,9 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 	 	if "FBKIHEP" or "formeeting" in series_num:
 	 		i_color = 0
 	 		if "FBK deep" in names[i]: i_color=1
-	 		if "IHEP non-carb" in names[i]: i_color=2
-	 		if "IHEP carbon" in names[i]: i_color=3
+	 		if "IHEP W1 I" in names[i]: i_color=2
+	 		if "IHEP W1 III" in names[i]: i_color=3
+                        if "IHEP W7" in names[i]: i_color=4
 
 	 		i_marker = 3
 	 		if "6e14" in  names[i]: i_marker=21
@@ -1211,7 +1212,7 @@ def get_scan_results(scan_num,chan,laser,sensor_name):
 				#tree.Add("root://cmseos.fnal.gov//store/group/cmstestbeam/SensorBeam2022/LecroyScope/RecoData/TimingDAQRECO/RecoWithTracks/%(version)s/run%i_info.root"%{"version":version_number}% r)
 				tree.Add(file_name% r)
 				counter = counter +1
-				if counter>=4: break
+				#if counter>=4: break
 			run = run[0]
 		else:
 			tree.Add("/home/daq/ScopeData/Reco/run_scope%i.root" % run)
