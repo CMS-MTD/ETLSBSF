@@ -36,7 +36,7 @@ photek_res_beam = 9 #ps
 diodeTarget = 41. #mV
 PiNCharge = 0.36 #fC
 doAverage=False
-doCFDScan=True
+doCFDScan=False
 n_channels=8
 
 def get_extra_cut(run,ch):
@@ -124,6 +124,7 @@ def get_min_amp(run,ch):
         if run>=60450 and run<61000: minAmp=15
         if run>=60573 and run<61000 and ch==6: minAmp=35
 	if run>=60532 and run<61000 and ch==0: minAmp=40
+        if run>=61001 and run<=61005 and ch==0: minAmp=90
 	if run>=60491 and run<60573 and ch==2: minAmp=30
 	if run>=60658 and run<61000 and ch==2: minAmp=30
 	if run>=60491 and run<60573 and ch==3: minAmp=30
