@@ -134,8 +134,10 @@ def Meas(Resource):
         time.sleep(5)
         try:
             ReadMeas = Resource.query(ReadCMD)
-        except pyvisa.errors.VisaIOError as e:
-            print "Error: {}".format(e)
+        except:
+            pass
+        # pyvisa.errors.VisaIOError as e:
+        #   print "Error: {}".format(e)
 
     VoltageReturned = float(ReadMeas.split(",")[0])
     CurrentReturned = float(ReadMeas.split(",")[1])
