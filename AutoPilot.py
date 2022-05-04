@@ -41,7 +41,7 @@ while AutoPilotStatus == 1:
 		SendLVGreenSignal(RunNumber) 
 		print 'Waiting for the Low Voltage Supply to complete the action'
 		ReceiveAutopilotGreenSignal()
-
+		print 'Supply has ramped up.'
 		#################################################
 		#Check for Stop signal in AutoPilot.status file
 		#################################################
@@ -53,6 +53,7 @@ while AutoPilotStatus == 1:
 			continue
 
 		#Send aquisition command to the scope
+		print 'Starting scope.'
 		ScopeAcquisition(RunNumber, NumEvents)
 		lastRun=RunNumber
 

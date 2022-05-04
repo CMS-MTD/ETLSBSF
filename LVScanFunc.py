@@ -1,7 +1,7 @@
 from AllModules import *
 from FileComm import *
 
-def InitiateResource():
+def InitiateResource():   # on keithley 2410 Menu->Communication->RS-232->Terminator-><LF>
     #CMD =':CONF:VOLT' #COnfiguring voltage as the output
     SourFuncCMD =':SOUR:FUNC VOLT'
     SensFuncCMD = 'SENS:FUNC "CURR"'
@@ -207,7 +207,7 @@ def TimeScan(Voltage, Time, FileNumber):
 
 def RampUp(Resource, StartVoltage, Debug = False):
     if Debug: print(Resource.query("*idn?"))
-
+    print "Trying to ramp up"
     CurrentVoltage = 0
     while CurrentVoltage > StartVoltage:     
         SetVoltageCMD = ':SOUR:VOLT %f' % CurrentVoltage

@@ -1,3 +1,4 @@
+#source /home/daq/otsdaq/setup_ots.sh
 import visa
 import time
 import sys
@@ -12,6 +13,7 @@ def getResourceDMM(debug=False):
     #my_instrument = rm.open_resource('TCPIP0::192.168.133.159::inst0::INSTR') #KEYSIGHT TECHNOLOGIES,MSOX92004A,MY53240102,05.70.00901
     #my_instrument = rm.open_resource('TCPIP0::192.168.133.169::inst0::INSTR') #LECROY,WR8208HD,LCRY5003N60377,9.4.0
     my_instrument = rm.open_resource('TCPIP::192.168.133.53::1394::SOCKET') #Keithley DMM
+    #my_instrument = rm.open_resource('TCPIP::192.168.133.163::1394::SOCKET') #Keithley DMM
     my_instrument.write("*RST; status:preset; *CLS")
     my_instrument.write("TEMP:TRAN FRTD")
     my_instrument.read_termination = '\n'
@@ -26,14 +28,20 @@ def getResourceDMM(debug=False):
 
     return my_instrument
 
-def queryVal(my_instrument, cmd):
+def queryVal(my_instrument, cmd, typeRead):
     # Query intrument 
     val = str(my_instrument.query(cmd))
+    time.sleep(0.5)
 
     # Parse output of pyvisa and convert to float
-    val = val.split(",")[0]
+    val = val.split(",")[0].replace("+","")
     try:
-        val = float(val[1:])
+        #print "string", val, typeRead
+        if typeRead == "temp":
+            val = float(val[:-1])
+        else:
+            val = float(val[:-3])
+        #print "int", val
     except:
         try:
             val = float(val[1:-2])
@@ -42,20 +50,19 @@ def queryVal(my_instrument, cmd):
 
     return val
 
-def queryMultiVal(my_instrument, cmd, channels):
-    t = round(time.time(), 3)
-    #t = round((datetime.now() - datetime.strptime("2000-01-01 00:00:00", "%Y-%m-%d %H:%M:%S")).total_seconds(), 3)
+def queryMultiVal(my_instrument, cmd, channels, typeRead="temp"):
+    t = round((datetime.now() - datetime.strptime("2000-01-01 00:00:00", "%Y-%m-%d %H:%M:%S")).total_seconds(), 3)
     vals = []
     for ch, doRead in channels:
         val = 0
         if doRead:
-            val = queryVal(my_instrument, "{0} (@{1})".format(cmd, ch))
+            val = queryVal(my_instrument, "{0} (@{1})".format(cmd, ch), typeRead)
         vals.append(val)
 
     line = "{:.13f}\t".format(t)
     for x in vals:
         line += "{:.13f}\t".format(x)
-        
+
     return line
 
 def progressbar(it, prefix="", size=60, file=sys.stdout):
@@ -85,33 +92,40 @@ def main():
     print("Connected to multi-meter")
     
     minChannel = 94; maxChannel = 132
-    #minChannel = 111; maxChannel = 113
-    readChannels = [112]
+    readChannels = [105]
     entriesPerLogFile = 1000
     allChannels = list((channel,True if channel in readChannels else False) for channel in range(minChannel,maxChannel+1))
     f=None
+
     try:
         while True:
-            fileName = "tempLogs/lab_meas_unsync_{:.3f}.txt".format(time.time())
-            #fileName = "tempLogs/lab_meas_unsync_{:.3f}.txt".format((datetime.now() - datetime.strptime("2000-01-01 00:00:00", "%Y-%m-%d %H:%M:%S")).total_seconds())
+            fileName = "tempLogs/lab_meas_unsync_{:.3f}.txt".format((datetime.now() - datetime.strptime("2000-01-01 00:00:00", "%Y-%m-%d %H:%M:%S")).total_seconds())
             print("-"*50)
             print("Sending measured temperature to: {}".format(fileName))
-    
+            
     
             lineCounter = 0
             for lineCounter in progressbar(range(entriesPerLogFile), "  Filling log file: ", 40):
+            #for lineCounter in range(entriesPerLogFile):
+                #queryVal(my_instrument, 'MEAS:TEMP? (@112)','temp')
+                #my_instrument.write("TEMP:TRAN FRTD")
                 line = queryMultiVal(my_instrument, 'MEAS:TEMP?', allChannels)
+                #line = queryMultiVal(my_instrument, 'MEAS:RES?', allChannels)
+                dewCurr = queryVal(my_instrument, 'MEAS:CURR? (@142)', 'amp')
+                dp = dewPoint(dewCurr*1000.0)
+                line += "\t"+str(dp)
                 f = open(fileName,"a")
                 f.write(line+"\n")
                 f.close()
                 time.sleep(1)
-     
+            
     except KeyboardInterrupt:
         print("\nStopped the logging of temperature")
         if f:
             f.close()
         pass
-    
+
+
 if __name__ == "__main__":
     main()
 
