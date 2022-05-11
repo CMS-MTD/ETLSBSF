@@ -23,6 +23,7 @@ time.sleep(InitialCurrentSettleTime)
 
 StartRunNumber = -1
 changeVoltage = True
+runsAtCurrentVoltage=0
 while abs(Voltage) <= abs(FinalVoltage) and nFinalVoltageRuns>0:
     print '\n*************************'
     print 'Waiting for the green signal from the autopilot\n'
@@ -30,36 +31,54 @@ while abs(Voltage) <= abs(FinalVoltage) and nFinalVoltageRuns>0:
     if StartRunNumber ==-1:
         StartRunNumber = RunNumber
     if RunNumber != 0:
+        EnvTimestamp = (datetime.now() - datetime.strptime("2000-01-01 00:00:00", "%Y-%m-%d %H:%M:%S")).total_seconds() #For daylight savings time
+        Temp16,Temp20,Temp17,Temp18,Temp19 = ConvertEnv(EnvTimestamp)
+
 
         #if abs(Voltage) <= abs(FinalVoltage):
         if changeVoltage:
             print 'Changing the Voltage to %f V' % Voltage
             MeasVoltage, MeasCurrent = SetVoltage(Resource, ScanNumber, Voltage, VoltageSettleTime, False)
+            if nRunsPerVoltage>1:
+                WriteVoltageScanDataFile(ScanNumber, "%i-%i"%(int(RunNumber),int(RunNumber)+nRunsPerVoltage-1), Voltage, MeasVoltage, MeasCurrent, Temp16,Temp20,Temp17,Temp18,Temp19,LaserTune)
+            else:
+                WriteVoltageScanDataFile(ScanNumber, RunNumber, Voltage, MeasVoltage, MeasCurrent, Temp16,Temp20,Temp17,Temp18,Temp19,LaserTune)
+
         else:
             print "Taking an extra run at {} V".format(round(Voltage,2))
             print 'Reading the current for extra run'
             time.sleep(5)
-            measVoltage,MeasCurrent = ReadVoltage(Resource)
+            MeasVoltage,MeasCurrent = ReadVoltage(Resource)
     
         if Compliance - MeasCurrent < ComplianceRange :
             HitComplianceTrue()
 
-        EnvTimestamp = (datetime.now() - datetime.strptime("2000-01-01 00:00:00", "%Y-%m-%d %H:%M:%S")).total_seconds() - 3600 #For daylight savings time
-        Temp16,Temp20,Temp17,Temp18,Temp19 = ConvertEnv(EnvTimestamp)
+
 
         ##### Write scan data for this run
-        WriteVoltageScanDataFile(ScanNumber, RunNumber, Voltage, MeasVoltage, MeasCurrent, Temp16,Temp20,Temp17,Temp18,Temp19,LaserTune)
-        
-        #if InitialVoltage != FinalVoltage:
-        if Voltage != FinalVoltage:
-            Voltage = Voltage + VoltageStep
-            if numberOfOddVoltagesToSkip > 0: 
-                Voltage = Voltage + VoltageStep
-                numberOfOddVoltagesToSkip = numberOfOddVoltagesToSkip - 1
-        else: 
+        if Voltage == FinalVoltage:
             nFinalVoltageRuns = nFinalVoltageRuns-1
+            nRunsPerVoltage=1
+            if not changeVoltage: WriteVoltageScanDataFile(ScanNumber, RunNumber, Voltage, MeasVoltage, MeasCurrent, Temp16,Temp20,Temp17,Temp18,Temp19,LaserTune)
             changeVoltage = False
-            
+
+        runsAtCurrentVoltage = runsAtCurrentVoltage+1
+        if runsAtCurrentVoltage < nRunsPerVoltage:
+            changeVoltage=False
+        else:
+            changeVoltage=True
+            runsAtCurrentVoltage=0
+
+            if Voltage != FinalVoltage:
+                Voltage = Voltage + VoltageStep
+                if numberOfOddVoltagesToSkip > 0: 
+                    Voltage = Voltage + VoltageStep
+                    numberOfOddVoltagesToSkip = numberOfOddVoltagesToSkip - 1
+
+
+        #if InitialVoltage != FinalVoltage:
+
+
         #if abs(Voltage) > abs(FinalVoltage):
             
             #StopAutopilot = raw_input("This is the last allowed voltage value. Do you want to stop the autopilot after this iteration (y/n) ? ")

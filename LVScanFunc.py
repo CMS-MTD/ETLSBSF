@@ -55,12 +55,12 @@ def SetVoltage(Resource, ScanNumber, Voltage, VoltageSettleTime = 15, Debug = Fa
 
             CurrentTime = datetime.now()
             EnvTimestamp = (CurrentTime - datetime.strptime("2000-01-01 00:00:00", "%Y-%m-%d %H:%M:%S")).total_seconds()# - 3600 #For daylight savings time
-            if EnvTimestamp < 626058003.694: EnvTimestamp = EnvTimestamp-3600
-            # print "timestamp is",EnvTimestamp
-            # print "currenttime",CurrentTime
+            if EnvTimestamp < 626058003.694: EnvTimestamp = EnvTimestamp
+            #print "currenttime",CurrentTime
             Temp16,Temp20,Temp17,Temp18,Temp19 = ConvertEnv(EnvTimestamp)
 
             if ScanNumber>1:
+
                 WriteEnvScanDataFile(ScanNumber, CurrentTime, MeasVoltage, MeasCurrent, Temp16,Temp20,Temp17,Temp18,Temp19)
 
             time.sleep(MeasTimeInterval)
