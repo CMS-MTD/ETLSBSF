@@ -1,0 +1,6 @@
+40017, IHEP W7 1e15 FNAL 16ch board (chan0), -18,
+30017, IHEP W7 1e15 FNAL 16ch board (chan5), -18,
+#40050,FBK 50 W18 1e15 chan1 (chan1), -18,
+#20050, FBK 50 W18 1e15 SC board (chan3), -18
+#40050,FBK 50 W18 1e15 chan2 (chan2), -18,
+#40050,FBK 50 W18 1e15 chan3 (chan3), -18,

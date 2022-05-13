@@ -124,6 +124,7 @@ def get_min_amp(run,ch):
         if run>=60450 and run<61000: minAmp=15
         if run>=60573 and run<61000 and ch==6: minAmp=35
 	if run>=60532 and run<61000 and ch==0: minAmp=40
+        if run>=61001 and run<=61005 and ch==0: minAmp=90
 	if run>=60491 and run<60573 and ch==2: minAmp=30
 	if run>=60658 and run<61000 and ch==2: minAmp=30
 	if run>=60491 and run<60573 and ch==3: minAmp=30
@@ -590,7 +591,7 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 		if series_num=="ATLAS": leg.SetNColumns(2)
 		if "HPK2_split" in series_num: leg.SetNColumns(2)
 		if "FBK" in series_num: leg.SetNColumns(2)
-		if "FBKIHEP" in series_num: leg.SetNColumns(3)
+		if "FBKIHEP" in series_num: leg.SetNColumns(2)
 
 		#if series_num=="HPK2_8e14": leg.SetNColumns(2)
 	n_legend_entries=0
@@ -627,8 +628,9 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 	 	if "FBKIHEP" or "formeeting" in series_num:
 	 		i_color = 0
 	 		if "FBK deep" in names[i]: i_color=1
-	 		if "IHEP non-carb" in names[i]: i_color=2
-	 		if "IHEP carbon" in names[i]: i_color=3
+	 		if "IHEP W1 I" in names[i]: i_color=2
+	 		if "IHEP W1 III" in names[i]: i_color=3
+                        if "IHEP W7" in names[i]: i_color=4
 
 	 		i_marker = 3
 	 		if "6e14" in  names[i]: i_marker=21
@@ -1211,7 +1213,7 @@ def get_scan_results(scan_num,chan,laser,sensor_name):
 				#tree.Add("root://cmseos.fnal.gov//store/group/cmstestbeam/SensorBeam2022/LecroyScope/RecoData/TimingDAQRECO/RecoWithTracks/%(version)s/run%i_info.root"%{"version":version_number}% r)
 				tree.Add(file_name% r)
 				counter = counter +1
-				if counter>=4: break
+				#if counter>=4: break
 			run = run[0]
 		else:
 			tree.Add("/home/daq/ScopeData/Reco/run_scope%i.root" % run)
