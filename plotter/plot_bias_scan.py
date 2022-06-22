@@ -130,6 +130,13 @@ def get_min_amp(run,ch):
 	if run>=60491 and run<60573 and ch==3: minAmp=30
 	if run>=60658 and run<61000 and ch==3: minAmp=30
 	if run>=61134 and run<=61212: minAmp=60
+        if run>=153665 and run<156000: minAmp=10
+        if run==153675: minAmp=50
+        if run==153676: minAmp=80
+        if run==153677: minAmp=110
+        if run==153691: minAmp=80
+        if run==153692: minAmp=110
+        if run==153709: minAmp=80
 	return minAmp
 
 
@@ -167,7 +174,7 @@ def get_time_range(run,ch):
 	if run>=153579 and run<=153618:
 		mint=0.5e-9
 		maxt=1.5e-9
-
+        
 	if run>=826 and run<=840:
 		mint=-0.3e-9
 		maxt=0.7e-9
@@ -186,6 +193,10 @@ def get_time_range(run,ch):
 	if run>60976 and run<63000:
 		mint = 0
 		maxt = 3e-9
+
+        if run>=153665 and run<=156000:
+		mint=3.7e-9
+		maxt=4.8e-9
 	return mint,maxt
 	
 
@@ -639,6 +650,19 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 
 	 		cosmetic_tgraph(graph,i_color,tb)
 	 		graph.SetMarkerStyle(i_marker)
+                
+                if "Beta" in series_num:
+                        i_color = 0
+                        if "FBK deep" in names[i]: i_color=1
+                        if "IHEP W1 I" in names[i]: i_color=2
+                        if "IHEP W1 III" in names[i]: i_color=3
+                        if "IHEP W7" in names[i]: i_color=4
+
+                        i_marker = 3
+                        if "Beta" in  names[i]: i_marker=21
+                        if "+3 deg" in names[i]: i_marker=24
+                        cosmetic_tgraph(graph,i_color,tb)
+                        graph.SetMarkerStyle(i_marker)
 
 	 	#elif "TB" in series_num or "temp" in series_num or "Feb" in series_num or "W2" in series_num or "Sergey" in series_num or series_num=="2" or "Laser" in series_num or "HPK2" in series_num: cosmetic_tgraph(graph,i,tb)
 		# cosmetic_tgraph(graph,i,tb) #### better default.
@@ -1202,21 +1226,30 @@ def get_scan_results(scan_num,chan,laser,sensor_name):
 	for i,run in enumerate(runs):
 		#open root file/tree
 		tree = ROOT.TChain("pulse")
-		if type(run) is list:
+		if (type(run) is list):
 			# for r in run: tree.Add("/home/daq/ScopeData/Reco/run_scope%i.root" % r)
 			version_number = "v10"
 			counter=0
 			for r in run:
 				if r<60000:
 					version_number="v1"
-				file_name= "root://cmseos.fnal.gov//store/group/cmstestbeam/SensorBeam2022/LecroyScope/RecoData/TimingDAQRECO/RecoWithTracks/"+version_number+"/run%i_info.root"
+                                if (r>153664 and r<155100):
+                                        file_name="root://cmseos.fnal.gov//store/group/cmstestbeam/SensorBeam2022/LecroyScope/RecoData/TimingDAQRECO/BetaSource/run_scope%i.root"
+                                else:
+                                        file_name= "root://cmseos.fnal.gov//store/group/cmstestbeam/SensorBeam2022/LecroyScope/RecoData/TimingDAQRECO/RecoWithTracks/"+version_number+"/run%i_info.root"
 				#tree.Add("root://cmseos.fnal.gov//store/group/cmstestbeam/SensorBeam2022/LecroyScope/RecoData/TimingDAQRECO/RecoWithTracks/%(version)s/run%i_info.root"%{"version":version_number}% r)
 				tree.Add(file_name% r)
 				counter = counter +1
 				#if counter>=4: break
 			run = run[0]
 		else:
-			tree.Add("/home/daq/ScopeData/Reco/run_scope%i.root" % run)
+                        print(type(run))
+                        if run >= 153701 and run <= 153710:
+                                version_number = "v10"
+                                file_name= "root://cmseos.fnal.gov//store/group/cmstestbeam/SensorBeam2022/LecroyScope/RecoData/TimingDAQRECO/BetaSource/run_scope%i.root"
+                                tree.Add(file_name% run)
+                        else:
+                                tree.Add("/home/daq/ScopeData/Reco/run_scope%i.root" % run)
 		
 		if not os.path.exists("plots/sensors/%s/"%sensor_name):
 			os.makedirs("plots/sensors/%s/"%sensor_name)
@@ -1457,7 +1490,10 @@ def get_scan_results(scan_num,chan,laser,sensor_name):
 	addGraph(graph_Dict, "graph_res_vs_charge", len(biases), mean_charges, time_res, err_charges, err_time_res)
 	addGraph(graph_Dict, "graph_res_corr_vs_charge", len(biases), mean_charges, time_res_corr, err_charges, err_time_res)
 	addGraph(graph_Dict, "graph_mean_noise", len(biases), biases, primary_noise, [0.1 for i in biases], primary_noise_err)
-
+        print "\n\n mean amps:\n", mean_responses
+        print "", mean_charges
+        print "", biases
+        print "\n"
 	#vs run number
 	if type(runs[0]) is not list:
 		addGraph(graph_Dict, "graph_charge_vs_runnum", len(biases), [1+i - runs[0] for i in runs], mean_charges, [0.01 for i in biases], err_charges)
