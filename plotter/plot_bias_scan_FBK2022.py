@@ -557,158 +557,47 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 
 	showtemp =True
 	showCMS =True
-	if series_num=="CMS" or series_num=="ATLAS" or series_num=="CMSATLAS": 
-		showtemp=False
-		showCMS = False
-	if series_num=="Sergey" or series_num=="2" or series_num=="TBCold" or "HPK2_cold" or "HPK2_8e14" in series_num:
-		showtemp=False
-	if "temp" in series_num: showtemp=True
-	print "showtemp: ",showtemp
-	mgraph = ROOT.TMultiGraph()
-	if "HPK2_8e14_1p5e15" in series_num or "HPK2_repro" in series_num:
-		if "split34" not in series_num: leg = ROOT.TLegend(0.2,0.7,0.83,0.89)
-		else: leg = ROOT.TLegend(0.2,0.78,0.83,0.89)
-	if "HPK2_split" or "FBK" in series_num:
-		leg = ROOT.TLegend(0.15,0.7,0.89,0.89)
-
-	elif( plottype == 1 or plottype== 9 or plottype == 14 or plottype==19 or plottype==22 or plottype==24 or plottype==25 or plottype==35 or plottype==39 or plottype==13 or plottype==41 or plottype==3 or plottype==38 or plottype==42 or plottype==43) and series_num!="7":
-		if (plottype==1 or plottype==9 or plottype==14) and series_num=="HPK2_8e14": leg = ROOT.TLegend(0.41,0.62,0.63,0.86)
-		elif "PiN" in series_num: leg = ROOT.TLegend(0.5,0.16,0.85,0.40)
-		elif "LaserJune8LowBV" in series_num and plottype!=24 and plottype!=35: leg = ROOT.TLegend(0.5,0.52,0.85,0.86)
-		elif showtemp: leg = ROOT.TLegend(0.17,0.52,0.42,0.86)
-		else:
-			if series_num=="2": leg = ROOT.TLegend(0.2,0.58,0.43,0.86)
-			else: leg = ROOT.TLegend(0.15,0.62,0.4,0.86)	
-	elif plottype==19 and series_num=="7":
-		leg = ROOT.TLegend(0.5,0.16,0.85,0.40)
-	elif plottype == 15:
-		leg= ROOT.TLegend(0.5,0.16,0.86,0.4)
-	else:
-		if showtemp:
-			leg = ROOT.TLegend(0.5,0.52,0.85,0.86)
-		else:
-			leg = ROOT.TLegend(0.6,0.62,0.87,0.86)
-	# if series_num=="TB":
-	#	leg = ROOT.TLegend(0.17,0.56,0.50,0.86)
+	mgraph = ROOT.TMultiGraph() 
+	leg = ROOT.TLegend(0.15,0.7,0.89,0.89)
 	leg.SetMargin(0.15)
+	leg.SetNColumns(2)
 
-
-	if not showtemp: 
-		if series_num=="CMS" or series_num=="CMSATLAS": leg.SetNColumns(3)
-		if "HPK2_8e14_1p5e15" in series_num or "HPK2_repro" in series_num: leg.SetNColumns(3)
-		if series_num=="ATLAS": leg.SetNColumns(2)
-		if "HPK2_split" in series_num: leg.SetNColumns(2)
-		if "FBK" in series_num: leg.SetNColumns(2)
-		if "FBKIHEP" in series_num: leg.SetNColumns(2)
-
-		#if series_num=="HPK2_8e14": leg.SetNColumns(2)
 	n_legend_entries=0
 	for i,scan in enumerate(scan_nums):
-		#print filename+str(scan)+"_"+str(chans[i])
-		#if plottype!=13:
 		graph = outFile.Get(filename+str(scan)+"_"+str(chans[i]))
-		#else: graph = outFile.Get(filename+str(scan))
 		tb = scan==1
 		cosmetic_tgraph(graph,i,tb)
-		if "HPK2_warm" in series_num:
-			if i < 3: cosmetic_tgraph(graph,i,tb)
-			else: 
-				cosmetic_tgraph(graph,i-3,tb)
-				graph.SetMarkerStyle(24)
-		if "HPK2_8e14" in series_num and "temp" not in series_num and "1p5" not in series_num:
-			if i >= 4: cosmetic_tgraph(graph,i-4,tb)
-			else: 
-				cosmetic_tgraph(graph,i,tb)
-				graph.SetMarkerStyle(24)
-		if "HPK2_8e14_1p5e15" in series_num or "HPK2_repro" in series_num:
-			i_color = 0
-			if "Split 2" in names[i]: i_color=1
-			if "Split 3" in names[i]: i_color=2
-			if "Split 4" in names[i]: i_color=3
-
-			i_marker = 3
-			if "8e14" in  names[i]: i_marker=24
-			if "1.5e15" in names[i]: i_marker =20 
-
-			cosmetic_tgraph(graph,i_color,tb)
-			graph.SetMarkerStyle(i_marker)
-
-		if "FBKIHEP" in series_num or "formeeting" in series_num:
-			i_color = 0
-			if "FBK deep" in names[i]: i_color=1
-			if "IHEP W1 I" in names[i]: i_color=2
-			if "IHEP W1 III" in names[i]: i_color=3
-			if "IHEP W7" in names[i]: i_color=4
-
-			i_marker = 3
-			if "6e14" in  names[i]: i_marker=21
-			if "1e15" in  names[i]: i_marker=24
-			if "1.5e15" in names[i]: i_marker =20 
-
-			cosmetic_tgraph(graph,i_color,tb)
-			graph.SetMarkerStyle(i_marker)
-
-		#elif "TB" in series_num or "temp" in series_num or "Feb" in series_num or "W2" in series_num or "Sergey" in series_num or series_num=="2" or "Laser" in series_num or "HPK2" in series_num: cosmetic_tgraph(graph,i,tb)
-		# cosmetic_tgraph(graph,i,tb) #### better default.
-		#else: cosmetic_tgraph_organized(graph,names[i],tb)
 		mgraph.Add(graph)
 		if "(chan" in names[i]: names[i] = names[i][0:len(names[i])-7] # remove chan label
-		if "repro" in series_num and n_legend_entries >= 12: continue
-		if "split34" in series_num and n_legend_entries >=6: continue
-		if series_num=="CMSATLAS" and "ATLAS" in names[i]: continue
-		if showtemp:
-			leg.AddEntry(graph, "%s, %i C" %(names[i].replace("(chan0)",""),temps[i]),"EP")
-		elif showCMS:
-			leg.AddEntry(graph, "%s" %(names[i].replace(" 8e14",", 8e14").replace(" 1.5e15",", 1.5e15")),"EP")
-		else: 
-			leg.AddEntry(graph, "%s" %(names[i].replace("CMS ","").replace("ATLAS ","").replace("MW","metal")),"EP")
+		leg.AddEntry(graph, "%s"% names[i],"EP")
 		n_legend_entries=n_legend_entries+1
 
 
 	mgraph.SetTitle("; %s; %s"%(x_axis,y_axis))
 	mgraph.Draw("AP")
-	if "stability" in series_num:
-		currentymin = mgraph.GetYaxis().GetXmin()
-		currentymax = mgraph.GetYaxis().GetXmax()
-		if plottype!=51: mgraph.GetYaxis().SetRangeUser(0.7*currentymin, 1.35*currentymax)
-		else: mgraph.GetYaxis().SetRangeUser(1.3*currentymin, 0.7*currentymax) ## negative
-
-	if "HPK2_8e14_1p5e15" in series_num or "HPK2_repro" in series_num or "FBK" in series_num:
-		currentymin = mgraph.GetYaxis().GetXmin()
-		currentymax = mgraph.GetYaxis().GetXmax()
-		mgraph.GetYaxis().SetRangeUser(currentymin, 1.35*currentymax)
+	currentymin = mgraph.GetYaxis().GetXmin()
+	currentymax = mgraph.GetYaxis().GetXmax()
+	mgraph.GetYaxis().SetRangeUser(currentymin, 1.35*currentymax)
 	
-	if "HPK2_split" in series_num and plottype==14: 
-		mgraph.GetYaxis().SetRangeUser(0, 35.)
 
-	#if "FBK" in series_num and plottype==14: 
-		#mgraph.GetYaxis().SetRangeUser(0, 30.)
 
-	if series_num=="HPK2_8e14_temp":
-		currentymin = mgraph.GetYaxis().GetXmin()
-		currentymax = mgraph.GetYaxis().GetXmax()
-		mgraph.GetYaxis().SetRangeUser(currentymin, 1.35*currentymax)
-
-	elif y_axis == "Risetime [ps] (10 to 90%)":
-		mgraph.GetYaxis().SetRangeUser(350,1000)
-		if series_num == "TB": mgraph.GetYaxis().SetRangeUser(350,850)
+	if y_axis == "Risetime [ps] (10 to 90%)":
+		mgraph.GetYaxis().SetRangeUser(250,900)
 	elif plottype==16 or plottype==17 or plottype==36 or plottype==37: 
 		mgraph.GetYaxis().SetRangeUser(23,65)
-	
-	if (plottype==1 or plottype==14) and "HPK2" in series_num:
-		currentmin = mgraph.GetXaxis().GetXmin()
-		currentmax = mgraph.GetXaxis().GetXmax()
-		#print "current min, max ",currentmin,currentmax
-		#currentmax=200
-		#currentmin=70
-		mgraph.GetXaxis().SetLimits(currentmin-50,currentmax)
-		#mgraph.GetYaxis().SetRangeUser(5,42)
-	#if plottype==3: mgraph.SetTitle("; Bias voltage [V]; Current [100 nA]")
-	if "HPK2_split" in series_num and plottype==14:
-		mgraph.GetXaxis().SetLimits(270,770)
+
 	if x_axis == "Bias voltage [V]" or "current" in x_axis: mgraph.Draw("AELP")
 	else: mgraph.Draw("AEP")
 	if(len(scan_nums)>0): leg.Draw()
+
+	latex= ROOT.TLatex()
+	
+	latex.SetTextFont(62)
+	latex.SetTextSize(0.04)
+	latex.DrawLatexNDC(0.15,0.91,"FNAL 120 GeV proton beam")
+	latex.SetTextFont(42)
+	latex.DrawLatexNDC(0.64,0.91,"FBK UFSD4 2x2, +20 C")
+
 	c.Print("plots/series%s%s.pdf"%(series_num,outputtag))
 
 
@@ -887,11 +776,13 @@ def get_slew_rate_channel(tree,ch,run=-1,sensor_name="",bias_voltage=0):
 	minAmp = get_min_amp(run,ch)
 	extra_cut = get_extra_cut(run,ch)
 
-	tree.Project("h","abs(risetime[%i])"%ch,"amp[%i]>%i %s"%(ch,minAmp,extra_cut))	### mV/ s
+	tree.Project("h","abs(risetime[%i])"%ch,"amp[%i]>%i && abs(risetime[%i]) > 0 %s"%(ch,minAmp,ch,extra_cut))	### mV/ s
 
 	if run>0:
 		c = ROOT.TCanvas()
 		hist.Draw()
+		c.Print("plots/sensors/%s/Run%i_%iV_ch%i_slew.pdf"%(sensor_name,run,bias_voltage,ch))
+
 		#c.Print("plots/runs/Run%i_ch%i_slewrate.pdf"%(run,ch))
 	#print 'Run NUmber %d,  %f, %f ' %(run,1e12*f1.GetParameter(2),1e12*f1.GetParError(2))
 	return 1e-9 * hist.GetMean(),1e-9* hist.GetMeanError()
@@ -902,7 +793,7 @@ def get_risetime_channel(tree,ch,run=-1,sensor_name="",bias_voltage=0):
 	extra_cut = get_extra_cut(run,ch)
 
 	#10 to 90 risetime
-	tree.Project("h","1e12*abs(0.8*amp[%i]/risetime[%i])"%(ch,ch),"amp[%i]>%i %s"%(ch,minAmp,extra_cut))	### mV/ s
+	tree.Project("h","1e12*abs(0.8*amp[%i]/risetime[%i])"%(ch,ch),"amp[%i]>%i && abs(risetime[%i]) > 0 %s"%(ch,minAmp,ch,extra_cut))	### mV/ s
 
 	if run>0:
 		c = ROOT.TCanvas()
