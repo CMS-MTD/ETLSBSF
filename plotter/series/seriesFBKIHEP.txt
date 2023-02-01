@@ -1,14 +1,16 @@
-20011,FBK shallow pre-rad +20 C (chan4), 20, #FBK 11 W8_T10_STD_5-6 
-20051,FBK shallow 1.5e15 (chan1), -18,FBK 51 W7 1.5e15 
-20020,FBK deep pre-rad +20 C (chan5), 20, #FBK 20 W18_T10_STD_1-4
-20032,FBK deep 1.5e15 (chan2), -18, FBK 32 W18 1.5e15
+20011,FBK shallow pre-rad (chan4), 20, #FBK 11 W8_T10_STD_5-6 +20C adjusted in plot_bias_scan_FBK2022
+20020,FBK deep pre-rad (chan5), 20, #FBK 20 W18_T10_STD_1-4 +20C adjusted in plot_bias_scan_FBK2022
+30017,IHEP carbon 1e15 (chan5), -18, IHEP 17 W7 1e15
 20027,FBK shallow 6e14 (chan0), -18, FBK 27 W8 6e14
-30006,IHEP W1 III 1e15 (chan4), -18,IHEP 6 W1 1e15
 20048,FBK deep 6e14 (chan1),-18, FBK 48 W17 6e14
-30017,IHEP W7 carbon 1e15 (chan5), -18, IHEP 17 W7 1e15
+30014,IHEP carbon 1.5e15 (chan6), -18, IHEP 14 W7 1.5e15
 20029,FBK shallow 1e15 (chan0), -18,FBK 29 W9 1e15
-30014,IHEP W7 carbon 1.5e15 (chan6), -18, IHEP 14 W7 1.5e15
 20050,FBK deep 1e15 (chan3), -18, FBK 50 W18 1e15
+30017,IHEP carbon 1e15 (chan5), -18, IHEP 17 W7 1e15
+20051,FBK shallow 1.5e15 (chan1), -18,FBK 51 W7 1.5e15 
+20032,FBK deep 1.5e15 (chan2), -18, FBK 32 W18 1.5e15
+30014,IHEP carbon 1.5e15 (chan6), -18, IHEP 14 W7 1.5e15
+#30006,IHEP W1 III 1e15 (chan4), -18,IHEP 6 W1 1e15
 #30008,IHEP W1 I 1e15 (chan3), -18, IHEP 8 W1-I 1e15
 #30002,IHEP W1 III 1.5e15 (chan4), -18,IHEP 2 W1-III 1.5e15
 #30010,IHEP W1 I 1.5e15 (chan5), -18,IHEP 10 W1-I 1.5e15
