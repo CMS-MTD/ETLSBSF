@@ -37,18 +37,45 @@ photek_res_beam = 9 #ps
 diodeTarget = 41. #mV
 PiNCharge = 0.36 #fC
 doAverage=False
-doCFDScan=False
+doCFDScan=True
 n_channels=8
 
 def get_extra_cut(run,ch):
 	extra_cut = ""
-	if run>=152852 and run<= 152859: ## crosstalk in 3rd gen sergey board.
-		if ch==2: extra_cut="&& amp[2]>amp[1]"
-		elif ch==1: extra_cut="&& amp[1]>amp[2]"
+	window_plus_minus = 0.175
+	x_center = -999
+	y_center = -999
 
-	if run>=153504 and run<=153556:
-		extra_cut="&& amp[2]>amp[1] && amp[2]>amp[0]"
+	if run>=64719 and run < 64814: ##20 um sensors
+		if ch==1: 
+			x_center = -2.05
+			y_center = -1.7
+		if ch==4: 
+			x_center = -1.1
+			y_center = -1.9
+	
+	if run>=64815 and run < 64932: ##30 um sensors
+		if ch==1: 
+			x_center = -2.0
+			y_center = -1.8
+		if ch==4:
+			x_center = -2.6
+			y_center = -2
+	
+	if run>=64933 and run <= 65038: ##50 um sensors
+		if ch==1: 
+			x_center = -3.2
+			y_center = -2.05
+		if ch==4:
+			x_center = -1.6
+			y_center = -1.8
 
+
+
+	x_range = "x_dut[0] > %0.3f && x_dut[0]<%0.3f" %(x_center-window_plus_minus,x_center+window_plus_minus)
+	y_range = "y_dut[0] > %0.3f && y_dut[0]<%0.3f" %(y_center-window_plus_minus,y_center+window_plus_minus)
+	extra_cut = "&& ntracks==1 && nplanes>=8 && npix>0 && %s && %s" % (x_range,y_range)
+	
 	return extra_cut
 
 def get_min_amp(run,ch):
@@ -194,8 +221,17 @@ def get_time_range(run,ch):
 	if run>60976 and run<63000:
 		mint = 0
 		maxt = 3e-9
+	
+	if run>64000 and run <70000:
+		mint = -2.5e-9
+		maxt = -1.5e-9
+		if ch==4:
+			mint = -2.3e-9
+			maxt = -1.3e-9
 	return mint,maxt
 	
+
+
 
 def get_photek_params(run):
 	photek_thresh = 15
@@ -209,9 +245,14 @@ def get_photek_params(run):
 		photek_thresh =60
 		photek_max = 120
 
-	if run>50000 and run<70000:
+	if run>50000 and run<64000:
 		photek_thresh =200
 		photek_max = 350
+		photek_chan=7
+	
+	if run>64000 and run<70000:
+		photek_thresh =70
+		photek_max = 280
 		photek_chan=7
 
 	return photek_thresh,photek_max,photek_chan	
@@ -285,6 +326,8 @@ def plot_noise(graphs_noise):
 	c.Print("plots/scan%i_noise.pdf"%scan_num)
 
 def plot_overlay(outfile,names,temps,series_num,plottype):
+	if plottype>=37 and plottype<40 and not doCFDScan: return
+
 	if plottype==1: 
 		outputtag = "_amp_vs_bias"
 		y_axis = "MPV amplitude [mV]"
@@ -561,28 +604,31 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 	mgraph = ROOT.TMultiGraph() 
 	leg = ROOT.TLegend(0.15,0.68,0.89,0.89)
 	leg.SetMargin(0.15)
-	leg.SetNColumns(3)
+	leg.SetNColumns(2)
 
 	n_legend_entries=0
 	for i,scan in enumerate(scan_nums):
 		graph = outFile.Get(filename+str(scan)+"_"+str(chans[i]))
 		tb = scan==1
 		
-		if "FBKIHEP" in series_num or "formeeting" in series_num:
+		if "ACHPK" in series_num:
 			i_color = 0
-			if "FBK deep" in names[i]: i_color=1
-			if "IHEP W1 I" in names[i]: i_color=4
-			if "IHEP W1 III" in names[i]: i_color=3
-			if "IHEP" in names[i] and "carbon" in names[i]: i_color=2
+			if "20 um" in names[i]: i_color=1
+			if "30 um" in names[i]: i_color=2
+			if "50 um" in names[i]: i_color=3
 
-			i_marker = 3
-			if "6e14" in  names[i]: i_marker=21
-			if "1e15" in  names[i]: i_marker=24
-			if "1.5e15" in names[i]: i_marker =20 
+			i_marker = 20
+			if "UCSC" in  names[i]: 
+				i_marker=24
+				#graph.SetLineStyle(7)
+
 
 			cosmetic_tgraph(graph,i_color,tb)
-		else:cosmetic_tgraph(graph,i,tb)
-		graph.SetMarkerStyle(i_marker)
+			graph.SetMarkerStyle(i_marker)
+			
+
+		else:
+			cosmetic_tgraph(graph,i,tb)
 
 		
 		mgraph.Add(graph)
@@ -602,7 +648,7 @@ def plot_overlay(outfile,names,temps,series_num,plottype):
 	if y_axis == "Risetime [ps] (10 to 90%)":
 		mgraph.GetYaxis().SetRangeUser(250,900)
 	elif plottype==16 or plottype==17 or plottype==36 or plottype==37: 
-		mgraph.GetYaxis().SetRangeUser(23,65)
+		mgraph.GetYaxis().SetRangeUser(13,65)
 
 	if x_axis == "Bias voltage [V]" or "current" in x_axis: mgraph.Draw("AELP")
 	else: mgraph.Draw("AEP")
@@ -809,7 +855,7 @@ def get_risetime_channel(tree,ch,run=-1,sensor_name="",bias_voltage=0):
 	hist = ROOT.TH1D("h","",60,100,1200)
 	minAmp = get_min_amp(run,ch)
 	extra_cut = get_extra_cut(run,ch)
-
+	hist.StatOverflows(False)
 	#10 to 90 risetime
 	tree.Project("h","1e12*abs(0.8*amp[%i]/risetime[%i])"%(ch,ch),"amp[%i]>%i && abs(risetime[%i]) > 0 %s"%(ch,minAmp,ch,extra_cut))	### mV/ s
 
@@ -869,7 +915,9 @@ def get_mean_response_channel(tree,ch,run=-1,laser=False,sensor_name="",bias_vol
 	photek_thresh,photek_max,photek_chan = get_photek_params(run)
 
 	if run>=152104 and run<=152108: hist = ROOT.TH1D("h","",50,2,710)
-
+	if run>=64000 and run<64814:
+		hist = ROOT.TH1D("h","",50,0,220)
+	
 	minAmp = get_min_amp(run,ch)
 	extra_cut = get_extra_cut(run,ch)
 
@@ -920,6 +968,9 @@ def get_charge_channel(tree,ch,run=-1,laser=False,sensor_name="",bias_voltage=0)
 	elif run>= 152719 and run <= 152731: hist = ROOT.TH1D(histname,"",100,2,500)
 	
 	elif run>=152104 and run<=152108: hist = ROOT.TH1D(histname,"",100,2,900)
+	elif run>=64000 and run<64814: hist = ROOT.TH1D(histname,"",50,1,50)
+	elif run>=64815 and run<65000: hist = ROOT.TH1D(histname,"",50,1,75)
+
 	else: hist = ROOT.TH1D(histname,"",50,2,100)
 
 	if laser: minAmp=1.
@@ -1127,7 +1178,11 @@ def get_scan_results(scan_num,chan,laser,sensor_name):
 			for r in run:
 				if r<60000:
 					version_number="v1"
-				file_name= "root://cmseos.fnal.gov//store/group/cmstestbeam/SensorBeam2022/LecroyScope/RecoData/TimingDAQRECO/RecoWithTracks/"+version_number+"/run%i_info.root"
+				if r>63000:
+					version_number = "v11"
+				#file_name= "root://cmseos.fnal.gov//store/group/cmstestbeam/SensorBeam2022/LecroyScope/RecoData/TimingDAQRECO/RecoWithTracks/"+version_number+"/run%i_info.root"
+				file_name= "root://cmseos.fnal.gov//store/group/cmstestbeam/SensorBeam2023/LecroyScope/RecoData/TimingDAQRECO/RecoWithTracks/"+version_number+"/run%i_info.root"
+
 				#tree.Add("root://cmseos.fnal.gov//store/group/cmstestbeam/SensorBeam2022/LecroyScope/RecoData/TimingDAQRECO/RecoWithTracks/%(version)s/run%i_info.root"%{"version":version_number}% r)
 				tree.Add(file_name% r)
 				counter = counter +1
@@ -1177,7 +1232,7 @@ def get_scan_results(scan_num,chan,laser,sensor_name):
 		primary_noise.append(primary_noise_tmp)
 		primary_noise_err.append(primary_noise_err_tmp)
 		if doCFDScan:
-			this_CFD_scan_res,this_err_CFD_scan_res,this_optimum_CFD = get_optimum_timeres_channel(tree,chan,run,sensor_name)
+			this_CFD_scan_res,this_err_CFD_scan_res,this_optimum_CFD = get_optimum_timeres_channel(tree,chan,run,sensor_name,biases[i])
 		else:
 			this_CFD_scan_res=20
 			this_err_CFD_scan_res=0
@@ -1261,15 +1316,15 @@ def get_scan_results(scan_num,chan,laser,sensor_name):
 
 
 		else: ##test beam data 
-			if (pow(sigma,2)-pow(photek_res_beam,2)) > 0: 
+			if (pow(sigma,2)-pow(photek_res_beam,2)) > 0 and (pow(sigmaCB,2)-pow(photek_res_beam,2)>0): 
 				time_res_corr.append(pow(pow(sigma,2)-pow(photek_res_beam,2),0.5))
 				time_res_corrCB.append(pow(pow(sigmaCB,2)-pow(photek_res_beam,2),0.5))
 			else:
 				time_res_corr.append(0)
 				time_res_corrCB.append(0)
 	
-			if (pow(this_CFD_scan_res,2)-pow(photek_res,2)) > 0:
-				CFD_scan_res_corr.append(pow(pow(this_CFD_scan_res,2)-pow(photek_res,2),0.5))
+			if (pow(this_CFD_scan_res,2)-pow(photek_res_beam,2)) > 0:
+				CFD_scan_res_corr.append(pow(pow(this_CFD_scan_res,2)-pow(photek_res_beam,2),0.5))
 			else:
 				CFD_scan_res_corr.append(0)
 

@@ -1,0 +1,6 @@
+50020, HPK 20 um FNAL board (chan1), 20, 
+50021, HPK 20 um UCSC board (chan4), 20, 
+50030, HPK 30 um FNAL board (chan1), 20,
+50031, HPK 30 um UCSC board (chan4), 20,
+50050, HPK 50 um FNAL board (chan1), 20,
+50050, HPK 50 um UCSC board (chan4), 20,
